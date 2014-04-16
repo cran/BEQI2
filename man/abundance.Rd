@@ -1,0 +1,18 @@
+\name{abundance}
+\alias{abundance}
+\title{Abundance}
+\usage{
+abundance(taxon, count)
+}
+\arguments{
+  \item{taxon}{character vector with taxa}
+
+  \item{count}{integer vector with counts}
+}
+\value{
+integer vector with abundance per taxon.
+}
+\description{
+Compute abundance for each taxon.
+}
+

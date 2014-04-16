@@ -1,0 +1,341 @@
+\documentclass[10pt]{article}
+
+<<ini, echo=FALSE, results='hide', message=FALSE>>=
+library(BEQI2)
+library(knitr)
+library(xtable)
+@
+
+
+%\VignetteEngine{knitr::knitr}
+%\VignetteIndexEntry{BEQI2: An Introduction}
+%\VignetteKeyword{benthic}
+%\VignettePackage{BEQI2}
+
+
+
+% page lay-out
+\usepackage[margin=25.4mm,a4paper]{geometry}
+
+% color (and colortbl)
+\usepackage[table]{xcolor}
+
+% graphics
+\usepackage{graphicx}
+
+% font for sections and chapters
+\usepackage{sectsty}
+\allsectionsfont{\sffamily}
+
+% hyper links
+\usepackage{hyperref}
+
+% indentation
+\setlength\parindent{0pt}
+
+
+% listing
+\usepackage{listings}
+
+% sideways tables
+\usepackage{rotating}
+
+% macros
+\newcommand{\R}{\textsf{R}}
+\newcommand{\code}[1]{\texttt{#1}}
+\newcommand{\pkg}[1]{\textbf{#1}}
+
+
+% title
+\title{BEQI2: Introduction}
+
+\author{
+    Dennis Walvoort\\
+    {\small\it Alterra -- Wageningen University \& Research Center}\\
+    {\small\it Wageningen, The Netherlands;}
+    {\small\it e-mail: \tt dennis.walvoort@wur.nl}\\ \smallskip
+    \and
+    Willem van Loon\\ 
+    {\small\it Rijkswaterstaat Water, Transport and Living Environment;}
+    {\small\it Department of Information Management}\\
+    {\small\it Lelystad, The Netherlands;}
+    {\small\it e-mail: \tt willem.van.loon@rws.nl}\\ \smallskip
+}
+
+\date{\Sexpr{packageDescription("BEQI2", fields = "Date")}}
+
+\hypersetup{
+    %pdfstartpage = 1,
+    %pdfstartview = XYZ 0 0 1,
+    bookmarksopen = true,
+    bookmarksnumbered = true,
+    pdftitle = {Benthic Ecosystem Quality Index 2: Introduction},
+    pdfauthor = {\textcopyright\ Dennis Walvoort \& Willem van Loon},
+    pdfsubject = {},
+    pdfkeywords = {},
+    colorlinks = true,
+    linkcolor = gray,
+    citecolor = gray,
+    filecolor = gray,
+    urlcolor = gray
+}
+
+
+
+\begin{document}
+
+\maketitle
+
+
+\lstdefinelanguage{json}{
+    basicstyle=\scriptsize\ttfamily,
+    numbers=left,
+    numberstyle=\tiny,
+    stepnumber=1,
+    numbersep=8pt,
+    showstringspaces=false,
+    breaklines=true,
+    frame=lines
+}
+
+% alternating row colors
+\rowcolors{2}{blue!5}{white}
+
+
+<<echo=FALSE>>=
+opts_chunk$set(
+    echo = FALSE,
+    comment = NA,
+    quiet = TRUE,
+    progress = FALSE,
+    tidy = FALSE,
+    cache = FALSE,
+    message = FALSE,
+    error = TRUE,
+    warning = TRUE
+)
+@
+
+
+\hrule
+
+\tableofcontents
+
+\bigskip
+\hrule
+
+\section{Introduction}
+
+This tutorial provides a brief introduction to the \pkg{BEQI2}-package. This package should facilitate the analysis of benthos data. It estimates several quality indices as 
+\begin{itemize}
+    \item total abundance of species ($N$);
+    \item species richness ($S$);
+    \item Shannon index ($H'$);
+    \item AZTI Marine Biotic Index (AMBI);
+    \item of each indicator given above, an ecological quality ratio (EQR) is calculated using the indicator value, reference value and bad value;
+    \item The BEQI2 index gives an EQR value, which is calculated as the average of the EQR values of species richness, Shannon and AMBI.
+\end{itemize}
+
+The package includes two additional optional features that enhance data preprocessing:
+\begin{itemize}
+    \item genus to species conversion: taxa counts at the taxonomic genus level can optionally be converted to the species level. It is assumed that the unidentified taxa at the genus level can be proportionally distributed over the identified taxa at the species level in the same sample;
+    \item pooling: small samples are combined to bigger samples with a standardized size to (a) meet the data requirements of the AMBI, (b) generate comparable species richness values and (c) give a higher benthos signal to noise ratio.    
+\end{itemize}
+
+\section{Quick-start}
+
+The workhorse function of the \pkg{BEQI2}-package is called \code{BEQI2}. This function performs a full BEQI2-analysis. It reads all its inputs from, and stores all its outputs to files. Storing these files in a structured way is therefore highly recommended. By default, the BEQI2-package uses the directory structure in Figure~\ref{fig:intro_dir}.
+\begin{figure}
+    \center
+    \includegraphics[width=0.3\textwidth]{./figures/intro_dir}
+    \caption{Default BEQI2-directory structure.}
+    \label{fig:intro_dir}
+\end{figure}
+
+The default directory structure in Figure~\ref{fig:intro_dir} can be created and populated with sample files by means of the \code{BEQI2dir} function. This will function will start after typing
+<<eval=FALSE, echo=TRUE>>=
+BEQI2dir() 
+@
+in the R-console. A directory selection dialogue will start to let you set an (existing!) working directory interactively.
+In non-interactive mode, the path to the working directory should be supplied as argument, 
+\textit{e.g.}:
+<<eval=FALSE, echo=TRUE>>=
+BEQI2dir(path = "c:/myprojects/BEQI2/BEQI2_FILES")
+@
+Note that paths are separated by (forward) slashes. In both cases, the working directory needs to be empty to avoid overwriting existing data.
+
+
+After running  \code{BEQI2dir} three directories have been created:
+\begin{itemize}
+    \item INPUT-FILES: a directory containing BEQI2-input files. These files contain the number of taxa that have been found in each sample. Consult Appendix~\ref{app:input} for more information.
+    \item OUTPUT-FILES: all BEQI2 analysis results. This directory is empty after running \code{BEQI2dir};
+    \item REF-FILES: a directory containing BEQI2-reference files. These files contain information on waterbodies/ecotopes (Appendix~\ref{app:ecotope}) and species sensitivities (AMBI (Appendix~\ref{app:ambi}), ITI (Appendix~\ref{app:iti})), and a recent copy of the Taxa Water management of the Netherlands (TWN) list. The latest version of this list can be downloaded from \url{sofus.ecosys.nl/taxabase.htm}
+\end{itemize}
+In addition, a file with the name `\code{settings.json}' has been created. This file contains all settings specified by the user to run the BEQI2-tool. See Appendix~\ref{app:settings} for more information.
+
+The BEQI2-tool can be started by typing 
+<<eval=FALSE, echo=TRUE>>=
+BEQI2()
+@
+in the \R-console. This will launch an interactive file selection dialogue. The user is asked to select the settings file (in this case `\code{settings.json}').
+
+Alternatively, one may also provide the name of the settings file directory as function argument:
+
+<<eval=FALSE, echo=TRUE>>=
+BEQI2(filename = "c:/myprojects/BEQI2/BEQI2_FILES/settings.json")
+@
+
+After the BEQI2-run is completed, all results are available in the OUTPUT-FILE directory. In addition, your default web-browser will be launched showing the analysis report.
+
+
+
+\section{BEQI2 results}
+After running the tool, the following results are available in the OUTPUT-FILES directory (see also Figure~\ref{fig:intro_dir}): 
+\begin{itemize}
+    \item a report in HTML-format;
+    \item output files aggregated to the ECOTOPE or OBJECTID (\textit{e.g.}, water body)  levels;
+    \item log-file with informative, warning, and error messages;
+    \item file with pooling information (optional).
+\end{itemize}
+
+
+
+\clearpage
+
+\appendix
+
+\section{BEQI2 Settings file\label{app:settings}}
+
+A BEQI2-run is entirely specified by the contents of a json-file (see \code{settings.json} in Figure~\ref{fig:intro_dir}). The format of this file is JavaScript Object Notation (JSON). This is a well structured, human-readable, open standard format (\url{www.json.org}). To improve readability, comments are allowed as an extension to the JSON-standard. Text after two (forward) slashes (//) are interpreted as comments and will be ignored. The figure below gives an example of a settings file. Each setting is explained by a comment.
+
+Most editors support editing JSON files, including the built-in editor of the Rgui for MS-Windows (see main menu: \texttt{File | Open script...}).
+
+\bigskip
+
+\begin{lstlisting}[language=json,firstnumber=1,commentstyle=blue]
+<<echo=FALSE, results='asis'>>=
+cat(
+    paste(
+        readLines(system.file("extdata", "settings.json", package = "BEQI2")), 
+        collapse = "\n"
+    )
+)
+@
+\end{lstlisting}
+
+
+
+
+\clearpage
+\section{BEQI2 input file\label{app:input}}
+
+The format of the BEQI2 input file has been specified in the table below. The format is the so called comma-separated values format (CSV) with the following characteristics:
+\begin{itemize}
+    \item decimal separator: period (.)
+    \item column separator: comma (,)
+    \item text values are preferably quoted
+\end{itemize}
+
+The following columns are compulsory: OBJECTID, ECOTOPE, SAMPLEID, TAXON, CHAR, SAMPDEV, AREA, DATE, and VALUE. Azoic samples must have a value of 0.
+
+<<echo=FALSE, results='asis'>>=
+d <- scan(
+    file = "./tables/tabbeqi2input.csv", 
+    what = character(), 
+    sep = ",",
+    quiet = TRUE
+)
+h <- d[1:3]
+d <- as.data.frame(matrix(data = d[-(1:3)], ncol = 3, byrow = TRUE))
+colnames(d) <- h
+print(
+    xtable(x = d, align = "llp{50mm}p{50mm}"), 
+    include.rownames = FALSE, 
+    size = "footnotesize",
+    add.to.row = list(list(-1), "\\rowcolor{blue!15}")
+)
+@
+
+
+
+\clearpage
+\section{AMBI-file \label{app:ambi}}
+
+The species sensitivity file consists of two columns, and is stored in comma separated file format (csv). The first column contains the taxa, the second column the corresponding sensitivity classes. The table below gives an example of (part of) a species sensitivity file.
+
+<<echo=FALSE, results='asis'>>=
+d <- readAMBI()
+print(
+    xtable(x = d[sample.int(n = nrow(d), size = 25), ], align = "llr"), 
+    include.rownames = FALSE,
+    size = "footnotesize",
+    add.to.row = list(list(-1), "\\rowcolor{blue!15}")
+)
+@
+
+
+\clearpage
+\section{ITI-file \label{app:iti}}
+The Infaunal Trophic Index (ITI) file consists of two columns, and is stored in the comma separated file format (csv). The first column contains the taxa, the second column the corresponding sensitivity classes. 
+
+The table below gives an example of (part of) an ITI-file.
+
+<<echo=FALSE, results='asis'>>=
+d <- readITI(
+    filename = system.file("extdata", "REF-FILES", "ITI.csv", 
+        package = "BEQI2")
+)
+print(
+    xtable(x = d[sample.int(n = nrow(d), size = 30), ], align = "llr"), 
+    include.rownames = FALSE,
+    size = "footnotesize",
+    add.to.row = list(list(-1), "\\rowcolor{blue!15}")
+)
+@
+
+The ITI classes have the following meaning:
+<<echo=FALSE, results='asis'>>=
+d <- data.frame(
+    ITI = c( "I", "II", "III", "IV"),
+    description = c(
+        "Suspension feeders",
+        "Interface feeders",
+        "Surface deposit feeders",
+        "Subsurface deposit feeders"
+    )
+)
+print(
+    xtable(x = d, align = "lrl"), 
+    include.rownames = FALSE,
+    size = "footnotesize",
+    add.to.row = list(list(-1), "\\rowcolor{blue!15}")
+)
+@
+
+
+\clearpage
+\section{Ecotope reference file \label{app:ecotope}}
+The Ecotope Reference file contains meta-information about each waterbody (OBJECTID) and ecotope.
+In this file, it is possible to use a correction factor (CORR) for the BEQI2\_EQR. At present, in the Dutch calculations a theoretical AMBI reference value of 0 has been used. Since this gives an underestimation of the BEQI2\_EQR of approx. $-0.02$, this correction factor of $+0.02$ is applied. If however calculated AMBI reference values are used, this correction factor must be set at 0 in the Ecotope Reference file.
+
+<<echo=FALSE, results='asis'>>=
+filename <- system.file(
+    "extdata", "REF-FILES", "BEQI2-Ecotopes-2014-04-11.csv", 
+    package = "BEQI2"
+)
+d <- read.csv(file = filename)
+d$LITAREA <- NULL
+d$LITREFS <- NULL
+d$OMSVG <- NULL
+print(
+    xtable(x = d), 
+    include.rownames = FALSE,
+    size = "footnotesize",
+    add.to.row = list(list(-1), "\\rowcolor{blue!15}"),
+    sanitize.text.function = function(x) {
+        gsub(pattern="_", replacement = "\\\\_", x=x)
+    },
+    rotate.colnames = TRUE
+)
+@
+\end{document}

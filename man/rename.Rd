@@ -1,0 +1,21 @@
+\name{rename}
+\alias{rename}
+\title{Renaming Taxon Names}
+\usage{
+rename(x, from, to)
+}
+\arguments{
+  \item{x}{character vector with names}
+
+  \item{from}{character vector of old names}
+
+  \item{to}{character vector of new names}
+}
+\value{
+character vector of \code{length(x)} with converted names
+}
+\description{
+Convert taxon name \code{x} to taxon name \code{new} by
+looking it up in \code{old}. Look-up is case insensitive.
+}
+

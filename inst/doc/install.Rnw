@@ -1,0 +1,261 @@
+\documentclass[10pt]{article}
+
+<<ini, echo=FALSE, results='hide'>>=
+library(knitr)
+@
+
+
+%\VignetteEngine{knitr::knitr}
+%\VignetteIndexEntry{BEQI2: Installation Guide}
+%\VignetteKeyword{benthic}
+%\VignettePackage{BEQI2}
+
+
+
+% page lay-out
+\usepackage[margin=25.4mm,a4paper]{geometry}
+
+% color
+\usepackage{xcolor}
+
+% graphics
+\usepackage{graphicx}
+
+% font for sections and chapters
+\usepackage{sectsty}
+\allsectionsfont{\sffamily}
+
+% hyper links
+\usepackage{hyperref}
+
+
+% indentation
+\setlength\parindent{0pt}
+
+
+% macros
+\newcommand{\R}{\textsf{R}}
+\newcommand{\code}[1]{\texttt{#1}}
+\newcommand{\pkg}[1]{\textbf{#1}}
+
+
+
+
+% title
+\title{BEQI2: Installation Guide}
+
+\author{
+    Dennis Walvoort\\
+    {\small\it Alterra -- Wageningen University \& Research Center}\\
+    {\small\it Wageningen, The Netherlands;}
+    {\small\it e-mail: \tt dennis.walvoort@wur.nl}\\ \smallskip
+    \and
+    Willem van Loon\\ 
+    {\small\it Rijkswaterstaat Water, Transport and Living Environment;}
+    {\small\it Department of Information Management}\\
+    {\small\it Lelystad, The Netherlands;}
+    {\small\it e-mail: \tt willem.van.loon@rws.nl}\\ \smallskip
+}
+
+\date{\Sexpr{packageDescription("BEQI2", fields = "Date")}}
+
+
+
+\hypersetup{
+    %pdfstartpage = 1,
+    %pdfstartview = XYZ 0 0 1,
+    bookmarksopen = true,
+    bookmarksnumbered = true,
+    pdftitle = {Benthic Ecosystem Quality Index 2: Installation Guide},
+    pdfauthor = {\textcopyright\ Dennis Walvoort \& Willem van Loon},
+    pdfsubject = {},
+    pdfkeywords = {},
+    colorlinks = true,
+    linkcolor = gray,
+    citecolor = gray,
+    filecolor = gray,
+    urlcolor = gray
+}
+
+
+
+
+\begin{document}
+
+
+\maketitle
+
+<<echo=FALSE>>=
+opts_chunk$set(
+    echo = FALSE,
+    comment = NA,
+    quiet = TRUE,
+    progress = FALSE,
+    tidy = FALSE,
+    cache = FALSE,
+    message = FALSE,
+    error = TRUE,
+    warning = TRUE
+)
+@
+
+
+\hrule
+
+\tableofcontents
+
+\bigskip
+\hrule
+
+
+\section{Introduction}
+
+The \pkg{BEQI2}-package requires a recent installation of the \R-environment. The aim of this manual is to help people with no, of only a limited experience in \R, to
+\begin{enumerate}
+    \item install the \R-environment;
+	\item install the \pkg{BEQI2}-package;
+	\item run a sample session.
+\end{enumerate}
+Installation of \R\ and its packages have to be done only once.
+Although this manual primarily focuses on MS-Windows users, users of other operating systems may also find these instructions useful. 
+
+Note: to facilitate importing BEQI2-results in MS-Excel, users should make sure that MS-Excel uses a period (.) as decimal separator and \emph{not} a comma (,). In addition, the date format should comply with ISO 8601, \textit{i.e.} YYYY-mm-dd (\textit{e.g.}, 2014-03-31).
+
+In Windows 7, this can be accomplished by means of the `Region and Language' menu, in Windows XP by means of the `Regional settings' menu (\textit{e.g.}, by using the English (UK) setting).
+
+
+\section{Install \R}
+
+<<echo=FALSE>>=
+rversion <- sub(
+    pattern = "R *\\(>= *([^)]*)\\).*", 
+    replacement = "\\1", 
+    x = packageDescription("BEQI2", fields = "Depends")
+)
+@
+
+
+You need at least \R\ version \Sexpr{rversion} to run the \pkg{BEQI2}-tool. The latest version of \R\ can be downloaded from the Comprehensive \R\ Archive Network (CRAN) website as follows:
+\begin{enumerate}
+	\item navigate in a web-browser to \url{www.r-project.org}
+	\item select `CRAN' in the menu on the left;
+    \item select a download location (preferably a location close to you);
+    \item select the \R-version for your operating system, \textit{.e.g.}, \code{`Download R for Windows'};
+    \item Select `base';
+    \item Select \code{Download R x.y.z} (where x.y.z. is the version number, \textit{e.g.}, 3.0.2);
+    \item Double click on the downloaded file and follow the installation instructions on the screen. In case of doubt, simply select the default/recommended settings.
+\end{enumerate}
+
+
+\section{Start the \R\ program}
+
+On MS-Windows, \R\ ships with a graphical user interface (GUI). It can be started by double clicking the \R-icon. The \R-console should look like similar to the one given in Figure~\ref{fig:install_gui}.
+\begin{figure}
+    \center
+    \includegraphics[width=0.7\textwidth]{./figures/install_gui}
+    \caption{R-GUI in MS-Windows}
+    \label{fig:install_gui}
+\end{figure}
+
+
+
+% \section{Install required packages}
+% 
+% The \pkg{BEQI2}-packages depends on several packages. These have to be installed first. Once the \pkg{BEQI2}-package has been officially published, this step in not needed anymore. The following packages need to be installed:
+% \begin{itemize}
+%     \item \pkg{knitr}
+%     \item \pkg{RJSONIO}
+%     \item \pkg{xtable}
+%     \item \pkg{plyr}
+%     \item \pkg{reshape2}
+% \end{itemize}
+% Packages are available for download on CRAN. To install a package from CRAN, go to the main menu of the \R-GUI and click \code{Packages} followed by submenu \code{Install packages...}. Select a download location (CRAN mirror, Figure~\ref{fig:install_package}, left), and select the packages listed above (Figure~\ref{fig:install_package}, right). Note that the download location only has to be selected once.
+% 
+% \begin{figure}
+%     \center
+%     \includegraphics[width=0.2\textwidth]{./figures/install_mirror}\hspace{20mm}
+%     \includegraphics[width=0.2\textwidth]{./figures/install_package}
+%     \caption{Selecting a CRAN-mirror (left) and CRAN-package (right).}
+%     \label{fig:install_package}
+% \end{figure}
+% 
+
+
+% \section{Install the \pkg{BEQI2}-package}
+% 
+% Installation of the \pkg{BEQI2}-package has to be done once. 
+% In the menu of the \R-console, select submenu \code{Install packages from local zip files...} from main menu \code{Packages} and navigate to the zip-file containing the \pkg{BEQI2}-package. This package has a name similar to BEQI2\_x.y-z.zip where x.y-z is the version number.
+% 
+% NOTE: Do not unzip this file or change its name!
+
+
+\section{Install the \pkg{BEQI2}-package}
+
+In the menu of the \R-console, select submenu \code{Install package(s)\dots} from main menu \code{Packages}. Select a download location (CRAN mirror, Figure~\ref{fig:install_package}, left), and select the BEQI2-package (Figure~\ref{fig:install_package}, right). \R\ will automatically install the BEQI2-package and all packages it depends on. 
+
+Note: Installation of the \pkg{BEQI2}-package has to be done only once. 
+
+\begin{figure}
+    \center
+    \includegraphics[width=0.2\textwidth]{./figures/install_mirror}\hspace{20mm}
+    \includegraphics[width=0.2\textwidth]{./figures/install_package}
+    \caption{Selecting a CRAN-mirror (left) and CRAN-package (right).}
+    \label{fig:install_package}
+\end{figure}
+
+
+
+
+
+
+\section{Load the \pkg{BEQI2}-package}
+
+Loading of the \pkg{BEQI2}-package has to be done at the start of each new \R-session.
+Go to the menu of the \R-console, select submenu \code{Load Package...} from main menu \code{Packages} and select the \pkg{BEQI2}-package.
+
+
+As an alternative one may also type 
+
+<<eval=FALSE, echo=TRUE>>=
+library(BEQI2)
+@
+in the \R-console.
+
+
+
+
+\section{Create a BEQI2-directory structure}
+To give users a head start, the function \code{BEQI2dir} is available to create a default \pkg{BEQI2}-package directory. Simply type this function in the \R-terminal:
+
+<<eval=FALSE, echo=TRUE>>=
+BEQI2dir() 
+@
+A directory selection dialogue will pop up and will ask the user to select an existing directory. 
+
+NOTE: This directory should be empty to avoid mixing-up and losing analysis results.
+
+
+\section{Start the \pkg{BEQI2}-tool}
+
+The \pkg{BEQI2}-tool may be started by typing
+
+<<eval=FALSE, echo=TRUE>>=
+BEQI2() 
+@
+or
+<<eval=FALSE, echo=TRUE>>=
+beqi2() 
+@
+
+in the \R-console. A file-dialogue will appear, and the user needs to select the JSON-file containing all BEQI2-settings.
+
+\section{View your results}
+The BEQI2-function produces the following results in the output directory:
+\begin{enumerate}
+    \item a report (HTML-format) with all analysis results. This report will be launched automatically in your default internet browser after a BEQI2-analysis;
+    \item analysis results written in CSV-format. This format can be directly used for further analysis, \textit{e.g.} in MS-Excel or LibreOffice;
+    \item a log-file containing diagnostic messages, warning messages, and error messages.
+\end{enumerate}
+
+
+\end{document}

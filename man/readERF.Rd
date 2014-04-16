@@ -1,0 +1,24 @@
+\name{readERF}
+\alias{readERF}
+\title{Read Ecotopes References File}
+\usage{
+readERF(filename)
+}
+\arguments{
+  \item{filename}{name of the ecotopes reference file
+  (character)}
+}
+\description{
+This function reads and checks files with reference values
+}
+\details{
+The function performs the following tasks: \itemize{
+\item{checks the existence of \code{filename};}
+\item{checks availablitity of required columns (case
+insensitive);} \item{removes redundant spaces}
+\item{removes duplicated records} }
+}
+\references{
+Van Loon, W, 2013. Loon2013-BEQI2-Specs-Ecotopes-27nov.doc
+}
+

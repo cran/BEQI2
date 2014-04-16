@@ -1,0 +1,9 @@
+### No data pooling
+
+Data will not be pooled and taken as is.
+
+```{r}
+# in case of no pooling, assign sample id to the POOLID column
+d_beqi$POOLID <- d_beqi$ID
+d_beqi$POOLRUN <- 1L
+```

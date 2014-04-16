@@ -1,0 +1,27 @@
+\name{pool}
+\alias{pool}
+\title{Pooling}
+\usage{
+pool(sampleId = 1:length(area), area, targetArea, maxTry = 100L)
+}
+\arguments{
+  \item{sampleId}{identifier}
+
+  \item{area}{sample corresponding to \code{sampleId}}
+
+  \item{targetArea}{vector of length 2 containing the lower
+  and upper bound of the pooled area}
+
+  \item{maxTry}{maximum number of unsuccessful pooling
+  tries before the algorithm gives up.}
+}
+\value{
+vector with idenitifiers (integers) indicating the pool to
+which each sample belongs (NA for samples that could not be
+pooled)
+}
+\description{
+This function randomly assigns samples to pools of
+approximately equal area
+}
+

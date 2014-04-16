@@ -1,0 +1,27 @@
+\name{beqi2}
+\alias{BEQI2}
+\alias{beqi2}
+\title{Perform BEQI-2 Analysis}
+\usage{
+beqi2(filename = NULL, tmpdir = tempfile(pattern = "BEQI2"),
+  browse = TRUE)
+
+BEQI2(filename = NULL, tmpdir = tempdir(), browse = TRUE)
+}
+\arguments{
+  \item{filename}{name of the JSON file defining all
+  analysis steps.}
+
+  \item{tmpdir}{directory to store temporary files (for
+  debugging only)}
+
+  \item{browse}{load resulting report in a browser?
+  \code{TRUE} or \code{FALSE}}
+}
+\description{
+This function performs a complete BEQI-2 analysis following
+the settings provided in \code{filename}.
+
+Perform BEQI-2 Analysis
+}
+

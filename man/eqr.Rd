@@ -1,0 +1,20 @@
+\name{eqr}
+\alias{eqr}
+\title{Ecological Quality Ratio (EQR)}
+\usage{
+eqr(x, bad, good)
+}
+\arguments{
+  \item{x}{numeric vector containing benthic indices}
+
+  \item{bad}{the reference value for a bad status}
+
+  \item{good}{the reference value for a good status}
+}
+\value{
+numeric vector with EQR
+}
+\description{
+Ecological Quality Ratio (EQR)
+}
+

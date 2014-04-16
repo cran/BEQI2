@@ -1,0 +1,20 @@
+\name{stripSpaces}
+\alias{stripSpaces}
+\title{Remove Redundant Spaces}
+\usage{
+stripSpaces(x)
+}
+\arguments{
+  \item{x}{character vector}
+}
+\value{
+character vector without trailing or multiple spaces
+}
+\description{
+This function removes redundant spaces from character
+vectors
+}
+\examples{
+stopifnot(BEQI2:::stripSpaces(" Hello  World  ") == "Hello World")
+}
+

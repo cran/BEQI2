@@ -1,0 +1,34 @@
+\name{genusToSpecies}
+\alias{genusToSpecies}
+\title{Genus to Species Conversion}
+\usage{
+genusToSpecies(id, taxon, count)
+}
+\arguments{
+  \item{id}{sample identifier}
+
+  \item{taxon}{taxon name on either the genus or species
+  level}
+
+  \item{count}{total number of individuals of a specific
+  taxon in a sample}
+}
+\value{
+\code{data.frame} with three columns: \code{id} the sample
+identifier, \code{taxon} the taxon name, and \code{count}
+the count after genus to species conversion.
+}
+\description{
+For each sample, the algorithm tries to convert taxa on the
+genus level to the species level. Counts at the genus level
+will be distributed over the species level proportional to
+the available number of species.
+}
+\note{
+The updated counts are not necessarily integers.
+}
+\examples{
+genusToSpecies(id = c(1, 1, 1),
+         taxon = c("Genus1", "Genus1 s1", "Genus1 s2"), count = c(4, 2, 1))
+}
+

@@ -1,0 +1,32 @@
+\name{readBEQI}
+\alias{readBEQI}
+\title{Read BEQI input files}
+\usage{
+readBEQI(filename)
+}
+\arguments{
+  \item{filename}{name of BEQI input file (character)}
+}
+\description{
+This function reads and checks BEQI input files. The format
+has been specified in Van Loon (2013).
+}
+\details{
+The function performs the following tasks: \itemize{
+\item{checks the existence of \code{filename};}
+\item{checks availablitity of required columns (case
+insensitive);} \item{make columns with aggregation data
+case-insensitive;} \item{removes redundant spaces}
+item{checks if DATE-field adheres to ISO 8601 (YYYY-mm-dd)}
+\item{constructs a unique identifier \code{ID} by
+concatenating columns \code{OBJECTID} and \code{DATE}}
+\item{aggregate (by summation) VALUE-fields of records that
+only differ in VALUE-field value} \item{checks that each
+\code{ID} has a unique \code{AREA}} \item{checks azoic
+samples for VALUE=0} \item{checks VALUE-field on missing
+values} \item{checks if VALUE-field is an integer} }
+}
+\references{
+Willem van Loon, 2013. BEQI2 INPUT FORMAT
+}
+

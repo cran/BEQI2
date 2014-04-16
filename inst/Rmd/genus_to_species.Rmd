@@ -1,0 +1,72 @@
+## Conversion of genus to species within a single sample
+
+The following taxonomic ranks have been found in the BEQI-2 input file:
+
+```{r}
+table(factor(d_beqi$taxonlevel))
+```
+The number of records are given below each rank. The taxonomic ranks have been obtained from the TWN-list.
+
+If in a specific sample a genus and one or more species of the same genus are present, it is likely that this genus is one of the species already present in the sample. Therefore, the abundance of this genus is distributed over the corresponding species already present in the sample in ratio of the abundances of species already identified in the sample. Ties have been cut randomly.
+
+```{r}
+# select only samples containing taxa on the the genus level
+d <- d_beqi[d_beqi$ID %in% unique(d_beqi[d_beqi$taxonlevel == "Genus", "ID"]), ]
+
+# select only species classified at the Genus and Species levels
+d <- d[d$taxonlevel %in% c("Genus", "Species"), c("ID", "TAXON", "VALUE")]
+
+# apply genus to species conversion
+d <- genusToSpecies(id = d$ID, taxon = d$TAXON, count = d$VALUE)
+names(d) <- toupper(names(d))
+
+# merge new counts to d_beqi data
+d_beqi <- merge(x = d_beqi, y = d, all = TRUE)
+sel <- !is.na(d_beqi$COUNT)
+d_beqi$VALUE_OLD <- d_beqi$VALUE
+d_beqi$VALUE[sel] <- d_beqi$COUNT[sel]
+d_beqi$COUNT <- NULL
+d_beqi$VALUE_NEW <- d_beqi$VALUE
+
+# flag genus to species conversion
+d_beqi$hasChanged <- abs(d_beqi$VALUE_NEW - d_beqi$VALUE_OLD) >  1.0e-9
+
+# number of records to report
+nRecords <- min(25L, sum(d_beqi$hasChanged))
+```
+The  number of records that have been selected for genus to species conversion is `r sum(d_beqi$hasChanged)`. The first `r nRecords` records are given below (remainder has been removed to decrease the size of this report). For each record both the old counts (`VALUE_OLD`, counts before conversion) and new counts (`VALUE_NEW`, counts after conversion) are given. 
+
+```{r, results='asis', eval=any(d_beqi$hasChanged)}
+d_beqi <- d_beqi[order(d_beqi$ID), ]
+print(
+    xtable(
+        head(
+            subset(
+                x = d_beqi, 
+                subset = hasChanged, 
+                select = c("ID", "TAXON", "VALUE_OLD", "VALUE_NEW")
+            ),
+            nRecords
+        )
+    ), 
+    type = "html",
+    include.rownames = FALSE
+)
+```
+
+
+```{r}
+# Remove genera with VALUE=0 and not being azoic samples. 
+# These values are due to genus to species conversion.
+n <- nrow(d_beqi)
+d_beqi <- d_beqi[isAzoic(d_beqi$TAXON) | (d_beqi$VALUE > 1.0e-9), ]
+n <- n - nrow(d_beqi)
+
+# remove temporary columns
+d_beqi$VALUE_NEW <- NULL
+d_beqi$VALUE_OLD <- NULL
+d_beqi$hasChanged <- NULL
+```
+
+
+The number of records in the BEQI2 input file after genus to species conversion is `r nrow(d_beqi)`.

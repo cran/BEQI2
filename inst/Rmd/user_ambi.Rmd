@@ -1,0 +1,5 @@
+The following AMBI-file has been specified:
+
+`r settings[["AMBI-file"]]`
+
+The sensitivities in this file will replace those provided by Dr. Borja (see acknowledgements).  Borja's data will be used for taxa not available in `r sQuote(basename(settings[["AMBI-file"]]))`.

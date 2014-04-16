@@ -1,0 +1,17 @@
+\name{BEQI2dir}
+\alias{BEQI2dir}
+\title{Create BEQI-2 Directory Structure}
+\usage{
+BEQI2dir(path = NULL)
+}
+\arguments{
+  \item{path}{name of an exisiting directory. This
+  directory should be empty to prevent loss of data. If
+  missing, a dialogue will appear.}
+}
+\description{
+Creates a BEQI2-directory structure and populates it with
+some relevant BEQI2-files. Users may wish to modify this
+directory structure and add their own data.
+}
+

@@ -1,0 +1,24 @@
+\name{readSettings}
+\alias{readSettings}
+\title{Read BEQI Settings File}
+\usage{
+readSettings(filename, verbose = getOption("verbose"))
+}
+\arguments{
+  \item{filename}{name of BEQI input file
+  (\code{character})}
+
+  \item{verbose}{print informative messages?}
+}
+\description{
+This function reads BEQI settings files (JSON)
+}
+\details{
+The function performs the following tasks: \itemize{
+\item{checks the existence of \code{filename};} \item{reads
+JSON file while ignoring C-style comments;} \item{converts
+relative to absolute paths} \item{checks filename
+extensions} \item{checks if months are in the set \{1, 2,
+\ldots, 12\}} }
+}
+

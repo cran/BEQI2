@@ -1,0 +1,34 @@
+"Item (header in data table)","Comments","Examples"
+"Measuring object id (OBJECTID)","The WFD water body code is used here","NL91_veersmr"
+"Ecotope code (ECOTOPE)","The ecotope code of the sample can be constituted freely, for example based on the intertidal/subtidal position, the salinity zone and the sediment composition.
+","MesohalineIntertidal"
+"Sample-id (SAMPLEID)
+","Location code
+OR
+Transect station code
+OR
+Sample number
+
+Note1: the BEQI2 tool combines the sample code with the date to ensure a unique sample code.
+Note 2: replicas should have different sample codes, e.g. by adding an additional letter “a, b”,etc.","North Sea: e.g. NOORDWK2;
+Dollard: Transect-station code;
+Delta: 1304
+
+"
+"Parameter (PAR)",,"COUNT
+"
+"Taxon name (TAXON)","Standardized taxon code (see WoRMS-website)
+In NL: the TWN code",
+"Characteristic (CHAR)","Additional aspect of the taxon; e.g. Juvenile (JUVNL) or quality code (e.g REST).
+Note 1: different annual classes of specific taxa are combined for BEQI2 analysis. 
+",
+"Compartment code (COMP)","Relevant compartment codes can be chosen freely.
+","BS = Bottom Sediment"
+"Samping device (SAMPDEV)","The code of the sampling device.","e.g., BOXCRR of VEENGB
+"
+"Sampled area (AREA)","The sampling area is necesarry for the data pooling process.","E.g. 0.015 m2."
+"Value processing code (WBEW)",,"NA = Not Applicable"
+"Value determination code (WBEP)","Benthic sampling and analysis method code","e.g., A2.107 or Essink1991"
+"Date (DATE)","ISO format: eejj-mm-dd is mandatory.",2001-03-05
+"Numerical value (VALUE)","Numerical value. Decimals are allowed.
+Note: the decimal sign must be a point (.)",20.5

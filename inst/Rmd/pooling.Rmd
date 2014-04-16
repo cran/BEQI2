@@ -1,0 +1,67 @@
+### Data pooling
+```{r}
+
+# number of pooling runs (hard coded TODO: in JSON-file?)
+nRuns <- 10L
+
+# pool by water body, ecotope, year and period (period is implicit by selection)
+# Note: pool identifier POOLID is only unique per strata
+d <- ldply(
+    .data = 1:nRuns,
+    .fun = function(i) {
+        d <- ddply(
+            .data = d_beqi, 
+            .variables = c("OBJECTID", "ECOTOPE", "YEAR"), 
+            .fun = function(x) {
+
+                # extract unique samples
+                ux <- unique(subset(x = x, select = c(ID, AREA)))
+                
+                # pooling
+                ux$POOLID <- pool(
+                    sampleId = ux$ID, 
+                    area = ux$AREA, 
+                    targetArea = settings[["target area"]]
+                )
+
+                # merge pool identifiers to original data set
+                x$POOLID <- ux$POOLID[match(x = x$ID, table = ux$ID)]
+
+                # return result
+                x
+            }
+        )
+        d$POOLRUN <- i
+        d
+    }
+)
+
+toLog("INFO", "storing pooling results...")
+tmp <- dcast(
+    data = unique(d[, c("ID", "POOLRUN", "POOLID")]), 
+    ID ~ POOLRUN, 
+    value.var= "POOLID"
+)
+write.csv(
+    x = tmp, 
+    file = settings[["pool-file"]],
+    row.names = FALSE,
+    na = ""
+)
+tmp <- as.matrix(tmp[, -1])
+toLog("INFO", "pooling results have been stored.")
+
+```
+
+The samples in the BEQI2-input file have been pooled. An average of `r round(100 * sum(is.na(tmp))/ length(tmp), 2)` percent of the samples could not be pooled in each run. These samples have been removed. Each sample has been pooled for at least `r min(apply(X = tmp, MARGIN = 1, FUN = function(x) {sum(!is.na(x))}))` out of 10 times.  The results have been written to `r settings[["pool-file"]]`.
+
+
+```{r}
+# remove samples that cannot be pooled
+d <- d[!is.na(d$POOLID), ]
+```
+
+```{r}
+d_beqi <- d
+rm(d)
+```
