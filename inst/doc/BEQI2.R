@@ -1,9 +1,7 @@
-
 ## ----ini, echo=FALSE, results='hide', message=FALSE----------------------
 library(BEQI2)
 library(knitr)
 library(xtable)
-
 
 ## ----echo=FALSE----------------------------------------------------------
 opts_chunk$set(
@@ -18,22 +16,17 @@ opts_chunk$set(
     warning = TRUE
 )
 
+## ----eval=FALSE, echo=TRUE-----------------------------------------------
+#  BEQI2dir()
 
 ## ----eval=FALSE, echo=TRUE-----------------------------------------------
-## BEQI2dir()
-
-
-## ----eval=FALSE, echo=TRUE-----------------------------------------------
-## BEQI2dir(path = "c:/myprojects/BEQI2/BEQI2_FILES")
-
+#  BEQI2dir(path = "c:/myprojects/BEQI2/BEQI2_FILES")
 
 ## ----eval=FALSE, echo=TRUE-----------------------------------------------
-## BEQI2()
-
+#  BEQI2()
 
 ## ----eval=FALSE, echo=TRUE-----------------------------------------------
-## BEQI2(filename = "c:/myprojects/BEQI2/BEQI2_FILES/settings.json")
-
+#  BEQI2(filename = "c:/myprojects/BEQI2/BEQI2_FILES/settings.json")
 
 ## ----echo=FALSE, results='asis'------------------------------------------
 cat(
@@ -42,7 +35,6 @@ cat(
         collapse = "\n"
     )
 )
-
 
 ## ----echo=FALSE, results='asis'------------------------------------------
 d <- scan(
@@ -61,7 +53,6 @@ print(
     add.to.row = list(list(-1), "\\rowcolor{blue!15}")
 )
 
-
 ## ----echo=FALSE, results='asis'------------------------------------------
 d <- readAMBI()
 print(
@@ -70,7 +61,6 @@ print(
     size = "footnotesize",
     add.to.row = list(list(-1), "\\rowcolor{blue!15}")
 )
-
 
 ## ----echo=FALSE, results='asis'------------------------------------------
 d <- readITI(
@@ -83,7 +73,6 @@ print(
     size = "footnotesize",
     add.to.row = list(list(-1), "\\rowcolor{blue!15}")
 )
-
 
 ## ----echo=FALSE, results='asis'------------------------------------------
 d <- data.frame(
@@ -101,7 +90,6 @@ print(
     size = "footnotesize",
     add.to.row = list(list(-1), "\\rowcolor{blue!15}")
 )
-
 
 ## ----echo=FALSE, results='asis'------------------------------------------
 filename <- system.file(
@@ -122,5 +110,4 @@ print(
     },
     rotate.colnames = TRUE
 )
-
 

@@ -11,7 +11,7 @@
 beqi2 <-
 function(filename = NULL, tmpdir = tempfile(pattern = "BEQI2"), browse = TRUE) {
 
-    # prevent potential problems wit dates in other locales
+    # prevent potential problems with dates in other locales
     oldLocale <- Sys.getlocale("LC_TIME")
     on.exit(Sys.setlocale("LC_TIME", oldLocale))
     Sys.setlocale("LC_TIME", "C")
@@ -126,14 +126,15 @@ function(filename = NULL, tmpdir = tempfile(pattern = "BEQI2"), browse = TRUE) {
     }
     toLog("INFO", "Report created.")
     toLog("INFO", "Converting report to HTML...")
-	markdownToHTML(
+	output <- markdownToHTML(
 		file  = "beqi2.md", 
-		output = settings[["report-file"]],
+		output = NULL,
         options = getOption("markdown.HTML.options"),
         extensions = getOption("markdown.extensions"),
     	title = "Benthic Ecosystem Quality Index 2 Report",
         stylesheet = system.file("css", "beqi2.css", package = "BEQI2")
 	)
+    writeLines(text = output, con = settings[["report-file"]])
     toLog("INFO", "Report converted to HTML.")
 
 	# view result

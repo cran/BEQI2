@@ -62,7 +62,7 @@ function(filename, verbose = getOption("verbose")) {
 
 	# remove all C-style comments (//)
 	# Note: comments are formally not part of the JSON specification.
-	# Note:  RJSONIO::fromJSON cannot handle comments with colons
+	# Note: RJSONIO::fromJSON cannot handle comments with colons
 	settings <- sub(pattern = "//.*$", replacement = "", x = settings)
 
 	# create single string
@@ -161,9 +161,9 @@ function(filename, verbose = getOption("verbose")) {
 #' 	\itemize{
 #' 		\item{checks the existence of \code{filename};}
 #'  	\item{checks availablitity of required columns (case insensitive);}
-#'      \item{make columns with aggregation data case-insensitive;}
+#'      \item{make column names with aggregation data case-insensitive;}
 #'  	\item{removes redundant spaces}
-#'      item{checks if DATE-field adheres to ISO 8601 (YYYY-mm-dd)}
+#'      \item{checks if DATE-field adheres to ISO 8601 (YYYY-mm-dd)}
 #'  	\item{constructs a unique identifier \code{ID} by concatenating 
 #'          columns \code{OBJECTID} and \code{DATE}}
 #'      \item{aggregate (by summation) VALUE-fields of records that only differ in VALUE-field value}

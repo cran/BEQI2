@@ -1,7 +1,5 @@
-
 ## ----ini, echo=FALSE, results='hide'-------------------------------------
 library(knitr)
-
 
 ## ----echo=FALSE----------------------------------------------------------
 opts_chunk$set(
@@ -16,7 +14,6 @@ opts_chunk$set(
     warning = TRUE
 )
 
-
 ## ----echo=FALSE----------------------------------------------------------
 rversion <- sub(
     pattern = "R *\\(>= *([^)]*)\\).*", 
@@ -24,20 +21,15 @@ rversion <- sub(
     x = packageDescription("BEQI2", fields = "Depends")
 )
 
+## ----eval=FALSE, echo=TRUE-----------------------------------------------
+#  library(BEQI2)
 
 ## ----eval=FALSE, echo=TRUE-----------------------------------------------
-## library(BEQI2)
-
-
-## ----eval=FALSE, echo=TRUE-----------------------------------------------
-## BEQI2dir()
-
+#  BEQI2dir()
 
 ## ----eval=FALSE, echo=TRUE-----------------------------------------------
-## BEQI2()
-
+#  BEQI2()
 
 ## ----eval=FALSE, echo=TRUE-----------------------------------------------
-## beqi2()
-
+#  beqi2()
 
