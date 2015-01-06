@@ -124,40 +124,43 @@ opts_chunk$set(
 \bigskip
 \hrule
 
-\section{Introduction}
+\section{Introduction\label{sec:intro}}
 
-This tutorial provides a brief introduction to the \pkg{BEQI2}-package. This package should facilitate the analysis of benthos data. It estimates several quality indices as 
+This tutorial provides a brief introduction to the \pkg{BEQI2}-package. This package should facilitate the analysis of benthos data. It estimates the following benthic quality indices: 
 \begin{itemize}
     \item total abundance of species ($N$);
     \item species richness ($S$);
     \item Shannon index ($H'$);
     \item AZTI Marine Biotic Index (AMBI);
-    \item of each indicator given above, an ecological quality ratio (EQR) is calculated using the indicator value, reference value and bad value;
+    \item of each indicator given above, an ecological quality ratio (EQR) is calculated using the indicator value, a `reference' value and `bad' value (Section~\ref{sec:eqr});
     \item The BEQI2 index gives an EQR value, which is calculated as the average of the EQR values of species richness, Shannon and AMBI.
 \end{itemize}
 
-The package includes two additional optional features that enhance data preprocessing:
+The package includes three additional optional features that enhance data preprocessing:
 \begin{itemize}
+    \item data pooling: data from small samples are combined to bigger samples with a standardized size to (a) meet the data requirements of the AMBI, (b) generate comparable species richness values and (c) give a higher benthos signal to noise ratio.
+    \item species name conversion: the tool automatically converts the synonym names into standardized species names using a conversion table which is based on the Worms species names list (\url{www.marinespecies.org}).
     \item genus to species conversion: taxa counts at the taxonomic genus level can optionally be converted to the species level. It is assumed that the unidentified taxa at the genus level can be proportionally distributed over the identified taxa at the species level in the same sample;
-    \item pooling: small samples are combined to bigger samples with a standardized size to (a) meet the data requirements of the AMBI, (b) generate comparable species richness values and (c) give a higher benthos signal to noise ratio.    
 \end{itemize}
+If you're not familiar with R, and don't know how to install R and the BEQI2-package, you should consult the R-website (\url{www.R-project.org}) or read the installation guide provided with the BEQI2-package.
+
 
 \section{Quick-start}
 
 The workhorse function of the \pkg{BEQI2}-package is called \code{BEQI2}. This function performs a full BEQI2-analysis. It reads all its inputs from, and stores all its outputs to files. Storing these files in a structured way is therefore highly recommended. By default, the BEQI2-package uses the directory structure in Figure~\ref{fig:intro_dir}.
 \begin{figure}
     \center
-    \includegraphics[width=0.3\textwidth]{./figures/intro_dir}
+    \includegraphics[width=0.5\textwidth]{./figures/intro_dir}
     \caption{Default BEQI2-directory structure.}
     \label{fig:intro_dir}
 \end{figure}
 
-The default directory structure in Figure~\ref{fig:intro_dir} can be created and populated with sample files by means of the \code{BEQI2dir} function. This will function will start after typing
+The default directory structure in Figure~\ref{fig:intro_dir} can be created and populated with sample files by means of the \code{BEQI2dir} function. This function starts after typing
 <<eval=FALSE, echo=TRUE>>=
 BEQI2dir() 
 @
-in the R-console. A directory selection dialogue will start to let you set an (existing!) working directory interactively.
-In non-interactive mode, the path to the working directory should be supplied as argument, 
+in the R-console. A directory selection dialogue starts to let you set an (existing, but empty!) working directory interactively.
+In non-interactive mode, the path to the (existing, but empty) working directory should be supplied as argument, 
 \textit{e.g.}:
 <<eval=FALSE, echo=TRUE>>=
 BEQI2dir(path = "c:/myprojects/BEQI2/BEQI2_FILES")
@@ -165,48 +168,35 @@ BEQI2dir(path = "c:/myprojects/BEQI2/BEQI2_FILES")
 Note that paths are separated by (forward) slashes. In both cases, the working directory needs to be empty to avoid overwriting existing data.
 
 
-After running  \code{BEQI2dir} three directories have been created:
+After running  \code{BEQI2dir} two directories have been created:
 \begin{itemize}
     \item INPUT-FILES: a directory containing BEQI2-input files. These files contain the number of taxa that have been found in each sample. Consult Appendix~\ref{app:input} for more information.
-    \item OUTPUT-FILES: all BEQI2 analysis results. This directory is empty after running \code{BEQI2dir};
-    \item REF-FILES: a directory containing BEQI2-reference files. These files contain information on waterbodies/ecotopes (Appendix~\ref{app:ecotope}) and species sensitivities (AMBI (Appendix~\ref{app:ambi}), ITI (Appendix~\ref{app:iti})), and a recent copy of the Taxa Water management of the Netherlands (TWN) list. The latest version of this list can be downloaded from \url{sofus.ecosys.nl/taxabase.htm}
+    \item REF-FILES: a directory containing BEQI2-reference files. These files contain information on waterbodies/ecotopes (Appendix~\ref{app:ecotope}) and species sensitivities (AMBI, Appendix~\ref{app:ambi}), and a recent copy of the Taxa Water management of the Netherlands (TWN) list. The latest version of this list can be downloaded from \url{sofus.ecosys.nl/taxabase.htm}
 \end{itemize}
-In addition, a file with the name `\code{settings.json}' has been created. This file contains all settings specified by the user to run the BEQI2-tool. See Appendix~\ref{app:settings} for more information.
+In addition, a file with the name `\code{settings.json}' has been created. This file contains all settings specified by the user to run the BEQI2-tool. See Section~\ref{app:settings} for more information.
 
 The BEQI2-tool can be started by typing 
 <<eval=FALSE, echo=TRUE>>=
 BEQI2()
 @
-in the \R-console. This will launch an interactive file selection dialogue. The user is asked to select the settings file (in this case `\code{settings.json}').
+in the \R-console. This launches an interactive file selection dialogue. The user is asked to select the settings file (in this case `\code{settings.json}').
 
-Alternatively, one may also provide the name of the settings file directory as function argument:
+Alternatively, one may also provide the name of the settings file as function argument:
 
 <<eval=FALSE, echo=TRUE>>=
 BEQI2(filename = "c:/myprojects/BEQI2/BEQI2_FILES/settings.json")
 @
 
-After the BEQI2-run is completed, all results are available in the OUTPUT-FILE directory. In addition, your default web-browser will be launched showing the analysis report.
+After the BEQI2-run is completed, all results are available in a directory with prefix `OUTPUT' and the current date-time stamp as postfix. In addition, your default web-browser is launched showing the analysis report.
 
 
 
-\section{BEQI2 results}
-After running the tool, the following results are available in the OUTPUT-FILES directory (see also Figure~\ref{fig:intro_dir}): 
-\begin{itemize}
-    \item a report in HTML-format;
-    \item output files aggregated to the ECOTOPE or OBJECTID (\textit{e.g.}, water body)  levels;
-    \item log-file with informative, warning, and error messages;
-    \item file with pooling information (optional).
-\end{itemize}
+\section{The BEQI2-package in more detail}
 
 
+\subsection{Data Files and Settings \label{app:settings}}
 
-\clearpage
-
-\appendix
-
-\section{BEQI2 Settings file\label{app:settings}}
-
-A BEQI2-run is entirely specified by the contents of a json-file (see \code{settings.json} in Figure~\ref{fig:intro_dir}). The format of this file is JavaScript Object Notation (JSON). This is a well structured, human-readable, open standard format (\url{www.json.org}). To improve readability, comments are allowed as an extension to the JSON-standard. Text after two (forward) slashes (//) are interpreted as comments and will be ignored. The figure below gives an example of a settings file. Each setting is explained by a comment.
+A BEQI2-run is entirely specified by the contents of a json-file (see `\code{settings.json}' in Figure~\ref{fig:intro_dir}). The format of this file is JavaScript Object Notation (JSON). This is a well structured, human-readable, open standard format (\url{www.json.org}). To improve readability, comments are allowed as an extension to the JSON-standard. Text after two (forward) slashes (//) is interpreted as comments and will be ignored. The figure below gives an example of a settings file.
 
 Most editors support editing JSON files, including the built-in editor of the Rgui for MS-Windows (see main menu: \texttt{File | Open script...}).
 
@@ -223,6 +213,100 @@ cat(
 @
 \end{lstlisting}
 
+
+\noindent The list below briefly describes each key in the JSON-file:
+\begin{itemize}
+\item \textit{title}: the title of the BEQI2 run;
+\item \textit{user}: name(s) and affiliation(s) of the analyst(s);
+\item \textit{date}: date when the JSON-file was written;
+\item \textit{files}: the paths to each input file:
+    \begin{itemize}
+        \item \textit{BEQI2}:  the BEQI2-input file (see Appendix~\ref{app:input} for details);
+        \item \textit{SpeciesNames}: Taxa Water management of the Netherlands (TWN) list. A recent version of this list is included in the BEQI2-package. The latest version of this list can be downloaded from \url{sofus.ecosys.nl/taxabase.htm};
+        \item \textit{AMBI}: optional user defined AMBI-file (see Appendix~\ref{app:ambi} for details);
+        \item \textit{Ecotopes}:  ecotopes reference file (see Appendix~\ref{app:ecotope} for details);
+    \end{itemize}
+    Note: optional files can be excluded from analysis by setting its value to `null', or `' (empty string), or by removing the line from the JSON file, or by commenting this line out by C-style comments (//);
+\item \textit{months}: integer vector of length 2 containing the first and last months to analyse. \textit{E.g.}, [6, 10] means: `analyse all data from June to October, inclusive';
+\item \textit{pooling (see Section~\ref{sec:pooling})}:
+    \begin{itemize}
+        \item \textit{enabled}:  is pooling enabled? [true, false];
+        \item \textit{RandomSeed}: seed to initialize the pseudo random number generator;
+        \item \textit{TargetArea}: samples are combined until the total area is within this range (numeric vector of length 2; units: m$^2$);
+    \end{itemize}
+\item \textit{GenusToSpeciesConversion} (see Section~\ref{sec:intro}): is genus to species conversion enabled? [true, false].
+\end{itemize}
+
+
+
+\subsection{Selection of benthos records}
+
+After the tool has been started with function \code{BEQI2()}, the BEQI2-file (Section~\ref{app:input}) is read and records outside the specified time-frame (see `months`-key in the JSON-file), non-endofauna records, and records that are hard to identify by benthos laboratories (labelled `REST`) are removed.
+
+
+\subsection{Conversion of species names}
+
+All taxa in the BEQI2-file are looked up in the species names file. Species not found are reported in a table. Occasionally it is possible to suggest a taxon name that is very similar (but not identical) to the names in the species names file. In that case, this name is reported as suggested name. The analyst can use this information to correct potential typing errors.
+
+
+\subsection{Species sensitivity values}
+
+Species sensitivity values are read, first from the user supplied species sensitivity file (Section~\ref{app:ambi}). Species sensitivity values that are still missing are taken from  Borja et al., (2000). The tool reports for which taxa species sensitivity values are missing. The species sensitivity values are used to compute the AMBI-indicator (Borja \textit{et al.}, 2000).
+
+
+\subsection{Waterbody-ecotopes and sample areas}
+
+For each combination of waterbody-ecotope, an overview of available sampling areas is tabulated. This table can be used to judge the efficacy of pooling.
+
+
+
+\subsection{Conversion of genus to species within a single sample}
+
+If enabled in the JSON-file, the tool converts taxa at the taxanomic genus level to the species level. It is assumed that the unidentified taxa at the genus level can be proportionally distributed over the identified taxa at the species level in the same sample.
+
+
+\subsection{Data pooling \label{sec:pooling}}
+
+If enabled in the JSON-file, data from small samples are combined to bigger samples with a specified size to (a) meet the data requirements of the AMBI, (b) generate comparable species richness values and (c) give a higher benthos signal to noise ratio.
+
+
+\subsection{Indicator calculation}
+
+After all steps above are carried out, four marine benthos indicators are estimated, \textit{i.e.}, total abundance ($N$), species richness ($S$), Shannon index ($H'$), and the AMBI marine biotic index. The last three indicators are part of the BEQI2.
+
+
+\subsection{Indicator percentile values}
+
+To get information on the distribution of each indicator in each waterbody-ecotope, percentile values are given. These percentiles may also be useful to set the reference values of the Indicator Ecological Quality Ratios (Section~\ref{sec:eqr}).
+
+\subsection{Indicator Ecological Quality Ratios \label{sec:eqr}}
+
+Finally, the indicator values are converted to ecological quality ratio's (EQR). The general EQR-formula for indicator $I$ is:
+\[
+    \mathrm{EQR}(I) = \frac{I_\mathrm{ass} - I_\mathrm{bad}}{I_\mathrm{ref} - I_\mathrm{bad}}
+\]
+where $I_\mathrm{ass}$ is the estimated indicator value, and $I_\mathrm{ref}$ and $I_\mathrm{bad}$ are its values for a reference status and a bad status respectively, which need to be specified in the Ecotope reference file (Appendix~\ref{app:ecotope}).
+Depending on `bad' and `ref', the EQR usually (but not necessarily!) varies between 0 (bad ecological quality) and 1 (reference ecological quality).
+
+The EQR(BEQI2) is the average EQR for AMBI, Shannon index $H'$ and species richness $S$.
+
+
+\subsection{Results}
+After running the tool, the following results are available: 
+\begin{itemize}
+    \item a report in HTML-format, containing all sections given above;
+    \item output files aggregated to the ECOTOPE or OBJECTID (\textit{e.g.}, waterbody)  levels;
+    \item log-file with informative, warning, and error messages;
+    \item and an optional file with pooling information.
+\end{itemize}
+
+
+
+
+
+\clearpage
+
+\appendix
 
 
 
@@ -258,8 +342,9 @@ print(
 
 
 
+
 \clearpage
-\section{AMBI-file \label{app:ambi}}
+\section{AMBI file \label{app:ambi}}
 
 The species sensitivity file consists of two columns, and is stored in comma separated file format (csv). The first column contains the taxa, the second column the corresponding sensitivity classes. The table below gives an example of (part of) a species sensitivity file.
 
@@ -274,59 +359,17 @@ print(
 @
 
 
-\clearpage
-\section{ITI-file \label{app:iti}}
-The Infaunal Trophic Index (ITI) file consists of two columns, and is stored in the comma separated file format (csv). The first column contains the taxa, the second column the corresponding sensitivity classes. 
-
-The table below gives an example of (part of) an ITI-file.
-
-<<echo=FALSE, results='asis'>>=
-d <- readITI(
-    filename = system.file("extdata", "REF-FILES", "ITI.csv", 
-        package = "BEQI2")
-)
-print(
-    xtable(x = d[sample.int(n = nrow(d), size = 30), ], align = "llr"), 
-    include.rownames = FALSE,
-    size = "footnotesize",
-    add.to.row = list(list(-1), "\\rowcolor{blue!15}")
-)
-@
-
-The ITI classes have the following meaning:
-<<echo=FALSE, results='asis'>>=
-d <- data.frame(
-    ITI = c( "I", "II", "III", "IV"),
-    description = c(
-        "Suspension feeders",
-        "Interface feeders",
-        "Surface deposit feeders",
-        "Subsurface deposit feeders"
-    )
-)
-print(
-    xtable(x = d, align = "lrl"), 
-    include.rownames = FALSE,
-    size = "footnotesize",
-    add.to.row = list(list(-1), "\\rowcolor{blue!15}")
-)
-@
-
 
 \clearpage
 \section{Ecotope reference file \label{app:ecotope}}
 The Ecotope Reference file contains meta-information about each waterbody (OBJECTID) and ecotope.
-In this file, it is possible to use a correction factor (CORR) for the BEQI2\_EQR. At present, in the Dutch calculations a theoretical AMBI reference value of 0 has been used. Since this gives an underestimation of the BEQI2\_EQR of approx. $-0.02$, this correction factor of $+0.02$ is applied. If however calculated AMBI reference values are used, this correction factor must be set at 0 in the Ecotope Reference file.
 
 <<echo=FALSE, results='asis'>>=
 filename <- system.file(
-    "extdata", "REF-FILES", "BEQI2-Ecotopes-2014-04-11.csv", 
+    "extdata", "REF-FILES", "BEQI2-Ecotopes.csv", 
     package = "BEQI2"
 )
 d <- read.csv(file = filename)
-d$LITAREA <- NULL
-d$LITREFS <- NULL
-d$OMSVG <- NULL
 print(
     xtable(x = d), 
     include.rownames = FALSE,

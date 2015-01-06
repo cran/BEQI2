@@ -1,5 +1,5 @@
-The following AMBI-file has been specified:
+The following AMBI-file has been provided:
 
-`r settings[["AMBI-file"]]`
+`r basename(settings$files$ambi)`
 
-The sensitivities in this file will replace those provided by Dr. Borja (see acknowledgements).  Borja's data will be used for taxa not available in `r sQuote(basename(settings[["AMBI-file"]]))`.
+The standard AMBI-list (www.azti.es, version October 2013, by courtesy of Angel Borja) will be used for taxa not available in `r sQuote(basename(settings$files$ambi))`.

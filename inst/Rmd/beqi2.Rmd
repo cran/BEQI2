@@ -1,5 +1,5 @@
 ```{r echo=FALSE}
-opts_chunk$set(
+knitr::opts_chunk$set(
     echo = FALSE,
     comment = NA,
     quiet = TRUE,
@@ -15,55 +15,54 @@ options(width = 110)
 
 
 
-# `r settings[["title"]]`
+# `r settings$title`
 
 
-## General settings
+## Data Files and Settings
 
-_Benthic Ecosystem Quality Index 2 -- package **`r packageDescription("BEQI2", fields = "Package")`** version `r packageDescription("BEQI2", fields = "Version")` (`r packageDescription("BEQI2", fields = "Date")`)_
+_Benthic Ecosystem Quality Index 2 -- BEQI2-package version `r packageVersion("BEQI2")` (`r packageDescription("BEQI2", fields = "Date")`)_
 
 - Time stamp: `r format(Sys.time())` 
-- User name: `r settings[["user"]]`
-- Input file: `r settings[["BEQI-file"]]`
-- Output file: `r settings[["output-file"]]`
-- Log file: `r settings[["log-file"]]`
+- User name: `r settings$user`
+- Input directory: `r dirname(settings$files$beqi2)`
+    - BEQI2-file: `r basename(settings$files$beqi2)`
+- Reference directory: `r dirname(settings$files$speciesnames)`
+    - Species names-file: `r basename(settings$files$speciesnames)`
+    - Ecotopes-file: `r basename(settings$files$ecotopes)`
+    - AMBI-file: version October 2013
+    - AMBI-file (user): `r if (is.null(settings$files$ambi)) {NA} else {basename(settings$files$ambi)}`
+- Output directory: `r dirname(settings$files$out_ecotope)`
+    - Output file ecotope-level: `r basename(settings$files$out_ecotope)`
+    - Output file object-level: `r basename(settings$files$out_objectid)`
+    - Output file pooling information: `r if (settings$pooling$enabled) {basename(settings$files$pooling)} else {NA}`
+    - Log file: `r basename(settings$files$log)`
+    - Report file: `r basename(settings$files$report)`
+- pooling: `r if (settings$pooling$enabled) {"enabled"} else {"disabled"}`
+- genus to species conversion: `r if (settings$genustospeciesconversion) {"enabled"} else {"disabled"}`
+
 
 
 ## Selection of benthos records
 
-```{r}
-d_twn <- readTWN(filename = settings[["TWN-file"]])
-```
-
-- TWN file: `r settings[["TWN-file"]]`
-    - Modification time: `r format(file.info(settings[["TWN-file"]])$mtime)`
-    - Number of records read: `r nrow(d_twn)`
-    
-    
-```{r}
-d_beqi <- readBEQI(filename = settings[["BEQI-file"]])
-```
-
-- Input file: `r settings[["BEQI-file"]]`
-    - Number of records read: `r nrow(d_beqi)`
+- Number of records read: `r nrow(d_beqi)`
 
 ```{r}
 # keep only records within the period of interest
 month <- as.integer(format(d_beqi$DATE, format = "%m"))
-sel <- (month >= settings[["months"]][[1]]) & 
-       (month <= settings[["months"]][[2]])
+sel <- (month >= settings$months[1]) & 
+       (month <= settings$months[2])
 d_beqi <- d_beqi[sel, ]
 ```
 
-    - Number of records between month `r settings[["months"]][[1]]` and month `r settings[["months"]][[2]]` : `r nrow(d_beqi)`
+- Number of records between month `r settings$months[1]` and month `r settings$months[2]` : `r nrow(d_beqi)`.
 
 ```{r}
 # convert taxa in 'd_beqi' to preferred names
 d_beqi$TAXON_NEW <- rename(x = d_beqi$TAXON, from = d_twn$taxonname, to = d_twn$taxon)
 
-# handle azoic (or azoisch) samples (no species available)
-index <- grep(pattern = "^Azoi", x = d_beqi$TAXON, ignore.case = TRUE)
-d_beqi$TAXON_NEW[index] <- d_beqi$TAXON[index]
+# handle azoic (or 'azoisch' (NL)) samples (no species available)
+sel <- isAzoic(d_beqi$TAXON)
+d_beqi$TAXON_NEW[sel] <- d_beqi$TAXON[sel]
 
 # add taxon level and taxon group
 index <- match(x = d_beqi$TAXON_NEW, table = d_twn$taxon)
@@ -97,7 +96,7 @@ blacklist <- as.data.frame(
     stringsAsFactors = FALSE
 )
 
-# merge black-list with BEQI-2 data
+# merge black-list with BEQI2 data
 d_beqi <- merge(x = d_beqi, y = blacklist, by = "taxongroup", 
                 all.x= TRUE, all.y = FALSE, sort = FALSE)
 
@@ -114,7 +113,7 @@ if (any(blacklisted)) {
     )
     names(d)[1] <- "taxon group"
     
-    # remove black-list species from BEQI-2 data
+    # remove black-list species from BEQI2 data
     d_beqi <- d_beqi[!blacklisted, ]
 }
 ```
@@ -124,14 +123,13 @@ if (any(blacklisted)) {
 print(xtable(d), type = "html", include.rownames = FALSE)
 ```
 
-
 ```{r}
 # remove CHAR code 'REST'
 n <- nrow(d_beqi)
 d_beqi <- subset(x = d_beqi, subset = is.na(CHAR) | (toupper(CHAR) != "REST"))
 ```
-- Number of records with CHAR = '`REST`' that have been removed: `r n - nrow(d_beqi)` 
 
+- Number of records with CHAR = '`REST`' that have been removed: `r n - nrow(d_beqi)` 
 
 ```{r}
 # add year
@@ -151,7 +149,7 @@ d_beqi$YEAR <- as.integer(format(d_beqi$DATE, format = "%Y"))
 inconvertible <- which(is.na(d_beqi$TAXON_NEW))
 ```
 
-The following `r length(inconvertible)` taxon names in the BEQI file are inconvertible. These names are not in the Taxa Water management the Netherlands (TWN) list and will be removed:
+The following `r length(inconvertible)` taxon names in the BEQI file are inconvertible. These names are not in the Taxa Water management the Netherlands (TWN) list, which is based on the WORMS list, and will be removed:
 ```{r eval=length(inconvertible)>0L, results='asis'}
 d <- ddply(
     .data = d_beqi[inconvertible, ],
@@ -182,36 +180,17 @@ d_beqi$TAXON <- d_beqi$TAXON_NEW
 d_beqi$TAXON_NEW <- NULL
 ```
 
-The first column gives the taxon name as found in the BEQI input file (`r basename(settings[["BEQI-file"]])`), the second column gives the number of occurrences of this name, and the third column gives taxon names (if any) in the TWN list that are most similar to the one in the BEQI input file. This column may be useful to discover and correct typing errors or slightly different spelling. Please report inconvertible taxa names of Dutch benthos data to the TAXA-TWN list manager of RWS (myra.swarte@rws.nl).
+The first column gives the taxon name as found in the BEQI input file (`r basename(settings$files$beqi2)`), the second column gives the number of occurrences of this name, and the third column gives taxon names (if any) in the TWN (WORMS) list that are most similar to the one in the BEQI input file. This column may be useful to discover and correct typing errors or slightly different spelling. Please report inconvertible taxa names of Dutch benthos data to the TAXA-TWN (WORMS) list manager of Rijkswaterstaat (myra.swarte@rws.nl).
 
 
 
 ## Species sensitivity values
 
-```{r child="default_ambi.Rmd", eval=isTRUE(is.null(settings[["AMBI-file"]]))}
+
+```{r child="default_ambi.Rmd", eval=isTRUE(is.null(settings$files$ambi))}
 ```
 
-```{r child="user_ambi.Rmd", eval=!isTRUE(is.null(settings[["AMBI-file"]]))}
-```
-
-
-```{r}
-# read AMBI's
-d_sens <- readAMBI()
-names(d_sens) <- c("TAXON", "AMBI")
-d_sens$TAXON <- rename(x = d_sens$TAXON, from = d_twn$taxonname, to = d_twn$taxon)
-d_sens <- unique(na.omit(d_sens))
-if (!is.null(settings[["AMBI-file"]])) {
-    d <- readAMBI(filename = settings[["AMBI-file"]])
-    names(d) <- c("TAXON", "AMBI_user")
-    d$TAXON <- rename(x = d$TAXON, from = d_twn$taxonname, to = d_twn$taxon)
-    d <- unique(na.omit(d))
-    d <- merge(x = d_sens, y = d, all = TRUE) 
-    sel <- is.na(d$AMBI_user)
-    d$AMBI_user[sel] <- d$AMBI[sel]
-    d_sens <- data.frame(TAXON = d$TAXON, AMBI = d$AMBI_user,
-                         stringsAsFactors = FALSE)
-}
+```{r child="user_ambi.Rmd", eval=!isTRUE(is.null(settings$files$ambi))}
 ```
 
 
@@ -226,7 +205,7 @@ d <- ddply(
 )
 if (nrow(d) > 0L) {
     cat("\nSpecies sensitivity values for the following taxa are missing:\n",
-        "(where n is the number of times each taxon is missing)\n")
+        "(where n is the number of records)\n")
     print(xtable(d), type = "html")
 }
 ```
@@ -234,22 +213,22 @@ if (nrow(d) > 0L) {
 
 
 
-
-## Inventory of water bodies-ecotopes present in the dataset
+## Waterbody-ecotopes and sample areas
 
 The following ecotopes have been selected:
 ```{r results='asis'}
-d <- table(d_beqi[, c("OBJECTID", "ECOTOPE")])
-print(xtable(as.data.frame(d)), type = "html")
+d <- ddply(
+    .data = d_beqi[, c("OBJECTID", "ECOTOPE")], 
+    .variables = c("OBJECTID", "ECOTOPE"), 
+    .fun =function(x) {
+        data.frame(Nr.records = nrow(x))
+    }
+)
+print(xtable(d), type = "html", include.rownames = FALSE)
 ```
 
 
-
-
-## Inventory of sample areas per water body-ecotope-year-period
-
-
-### Available total sample area
+### Available total sample area for the available sample sizes (m&sup2;)
 
 ```{r results='asis'}
 d <- unique(
@@ -267,28 +246,8 @@ print(xtable(d), type = "html")
 ```
 
 
-```{r}
-sel <- which(d$total  < settings$'target area'[1])
-tooSmall <- NULL
-if (length(sel) > 0L) {
-    tooSmall <- sQuote(
-        apply(
-            X = d[sel, c("YEAR", "OBJECTID", "ECOTOPE"), drop = FALSE],
-            MARGIN = 1,
-            paste,
-            collapse = "-"
-        )
-    )
-}
-    
+```{r child="pooling_area.Rmd", eval=isTRUE(settings$pooling$enabled)}
 ```
-
-The total sample area is smaller than the minimum target pool area (`r settings$'target area'[1]`) for `r length(tooSmall)` combinations of water body- ecotope-year-period.
-
-```{r eval=length(tooSmall)>0L}
-tooSmall
-```
-
 
 
 
@@ -306,26 +265,25 @@ d <- dcast(
 )
 d$total <- as.integer(rowSums(d[, -(1:3), drop = FALSE]))
 print(xtable(d), type = "html")
-
 ```
 
 
-```{r child="genus_to_species.Rmd", eval=isTRUE(settings[["Genus to species conversion"]])}
-```
-
-
-```{r child="pooling.Rmd", eval=isTRUE(settings[["pool"]])}
-```
-
-```{r child="nopooling.Rmd", eval=!isTRUE(settings[["pool"]])}
+```{r child="genus_to_species.Rmd", eval=isTRUE(settings$genustospeciesconversion)}
 ```
 
 
 
+## Data pooling
 
-## Indicators
+```{r child="pooling.Rmd", eval=isTRUE(settings$pooling$enabled)}
+```
+
+```{r child="nopooling.Rmd", eval=!isTRUE(settings$pooling$enabled)}
+```
 
 
+
+## Indicator calculation
 
 ```{r}
 groupingVars <- c("OBJECTID", "ECOTOPE", "YEAR", "POOLRUN", "POOLID")
@@ -333,21 +291,17 @@ groupingVars <- c("OBJECTID", "ECOTOPE", "YEAR", "POOLRUN", "POOLID")
 
 ### Total abundance
 
-The total abundance of individuals ($N$) in the data pool.
+The total abundance of individuals (_N_) in the data pool. This indicator is provided for general information on the sample, quality control and optional manual correction for sample size (_e.g._ by means of Margalef _d_).
 
 
 ### Species richness
 
-Species richness ($S$) is defined as the number of taxa (lowest identification level possible) per sampling unit (data pool or box core sample).
+Species richness (_S_) is defined as the number of taxa (lowest identification level possible) per sampling unit (data pool or box core sample).
 
 
 ### Shannon Index
 
-Shannon Index is given by (Shannon, 1948, p.393)
-\[
-    H'(X) = -\sum_i \mathrm{p}(x_i) \log_2 \left[\mathrm{p}(x_i) \right]
-\]
-where in our case $\mathrm{p}(x_i) = \frac{n_i}{N}$ the probability of occurrence of species $x_i$, $n_i$ is the abundance of species $x_i$ and $N$ is the total abundance, _i.e._, $N = \sum_i n_i$.
+Shannon Index (_H'_)is given by (Shannon, 1948, p.393). In the BEQI2 tool, the logarithm to the base 2 is taken to estimate _H'_.
 
 ```{r}
 indicators <- function(x) {
@@ -378,9 +332,9 @@ d_ind <- ddply(.data = d_beqi, .variables = groupingVars, .fun = indicators)
 
 
 
-### Marine Biotic Coefficients
+### AMBI: Marine Biotic Coefficient
 
-The table below gives an overview of the total number of taxa within each sensitivity class in each species sensitivity file for the entire data set. 
+Borja et al. (2000) introduced the Biotic Coefficient (AMBI). It is a weighted linear combination of species sensitivity classes. The table below gives an overview of the total number of identified taxa in the samples within each species sensitivity class. 
 
 ```{r results='asis'}
 print(xtable(t(as.matrix(table(d_sens$AMBI)))), type = "html", 
@@ -389,7 +343,8 @@ print(xtable(t(as.matrix(table(d_sens$AMBI)))), type = "html",
 
 ```{r}
 # merge sensitivity classes with BEQI-input data
-d_beqi$AMBI <- d_sens$AMBI[match(x = d_beqi$TAXON, table = d_sens$TAXON)]
+index <- match(x = d_beqi$TAXON, table = d_sens$TAXON)
+d_beqi$AMBI <- d_sens$AMBI[index]
 
 # estimate frequency distribution of sensitivity classes
 d <- ddply(
@@ -422,21 +377,15 @@ tmp <- ddply(
         } else {
             p <- 100 * sum(x$n[index])/sum(x$n)
         }
-        data.frame(missing = p, warning = ifelse(p > 20, "!", ""))
+        data.frame(missing = p)
     }
 )
 print(xtable(tmp), type = "html")
 ```
 
-Note that `r sum(tmp$warning != "")` percentages exceed 20.
+Note that in `r sum(tmp$missing > 20)` cases, more than 20% of the total abundance does not have an AMBI classification.
 
-Borja et al. (2000) introduced the Biotic Coefficient, defined as:
-\[
-c_b = \mathbf{w}^\prime \mathbf{f} = \sum_{i=1}^5 w_i f_i
-\]
-where $\mathbf{w}=[0, 1.5, 3, 4.5, 6]^\prime$ is a vector of weights and $\mathrm{f}$ is a vector of length 5 containing the fractions of species in the sensitivity classes (I, II, III, IV, V). The prime $\prime$ denotes vector transpose.
-
-In order to estimate the biotic coefficients, `r sum(is.na(d$AMBI))` taxa with unknown sensitivity classes will be excluded from analysis.
+To estimate the biotic coefficients, `r sum(is.na(d$AMBI))` taxa with unknown species sensitivity classes will be excluded from analysis.
 
 
 ```{r}
@@ -466,105 +415,6 @@ d <- ddply(
 )
 
 d_ind <- merge(x = d_ind, y = d, all = TRUE)
-
-```
-
-
-### Infaunal Trophic Index
-
-The infaunal trophic index (ITI) is calculated as:
-\[
-    \mathrm{ITI} = \frac{1}{3}\sum_{i=1}^3 (4-i) f_i
-\]
-where $f_i$ is the fraction of species in class $i$, where 
-- class 1 are suspension feeders (highest quality);
-- class 2 are interface feeders
-- class 3 are surface deposit feeders and
-- class 4 are subsurface deposit feeders (lowest quality). 
-
-See Gittenberger & van Loon (2013) for more information.
-
-
-```{r eval=!is.null(settings[["ITI-file"]])}
-# read ITI data
-d <- readITI(settings[["ITI-file"]])
-names(d) <- c("TAXON", "ITI")
-
-# convert TAXON names to preferred names
-d$TAXON <- rename(x = d$TAXON, from = d_twn$taxonname, to = d_twn$taxon)
-d <- na.omit(d)
-
-# add ITI score to BEQI2-data
-index <- match(x = d_beqi$TAXON, table = d$TAXON)
-d_beqi$ITI <- d$ITI[index]
-
-d <- ddply(
-    .data = d_beqi, 
-    .variables = groupingVars, 
-    .fun = function(x) {
-        # estimate frequency
-        f <- tapply(X = x$VALUE, INDEX = x$ITI, FUN = sum)
-        f <- f / sum(f)
-        
-        # estimate and return ITI
-        w <- (4-(1:4)) / 3
-        names(w) <- c("I", "II", "III", "IV")
-        w <- w[names(f)] # alignment
-        data.frame(ITI = sum(w * f))
-    
-})
-
-
-d_ind <- merge(x = d_ind, y = d, all = TRUE)
-
-```
-
-
-
-```{r eval=!is.null(settings[["FIBI-file"]])}
-
-### FIsheries Biotic Index 
-#The FIsheries Biotic Index (FIBI) is calculated as:
-#\[
-#    \mathrm{FIBI} = \frac{1}{3}\sum_{i=1}^3 (4-i) f_i
-#\]
-#where $f_i$ is the fraction of species in class $i$, where
-#- class 1 is very sensitive to fisheries (highest quality);
-#- class 2 is sensitive to fisheries
-#- class 3 is insensitive to fisheries and
-#- class 4 are second-order opportunistic species (lowest quality). 
-
-
-# read FIBI data
-d <- readFIBI(settings[["FIBI-file"]])
-names(d) <- c("TAXON", "FIBI")
-
-# convert TAXON names to preferred names
-d$TAXON <- rename(x = d$TAXON, from = d_twn$taxonname, to = d_twn$taxon)
-d <- na.omit(d)
-
-# add FIBI score to BEQI2-data
-index <- match(x = d_beqi$TAXON, table = d$TAXON)
-d_beqi$FIBI <- d$FIBI[index]
-
-d <- ddply(
-    .data = d_beqi, 
-    .variables = groupingVars, 
-    .fun = function(x) {
-        # estimate frequency
-        f <- tapply(X = x$VALUE, INDEX = x$FIBI, FUN = sum)
-        f <- f / sum(f)
-        
-        # estimate and return FIBI
-        w <- (4-(1:4)) / 3
-        names(w) <- c("I", "II", "III", "IV")
-        w <- w[names(f)] # alignment
-        data.frame(FIBI = sum(w * f))
-})
-
-
-d_ind <- merge(x = d_ind, y = d, all = TRUE)
-
 ```
 
 
@@ -572,153 +422,95 @@ d_ind <- merge(x = d_ind, y = d, all = TRUE)
 
 
 
+## Indicator percentile values
 
-
-
-
-
-
-
-
-### Percentiles
-
-
-Percentiles for each indicator are given below. In addition, the number of samples (n) used to estimate these percentiles is provided. The percentiles have been calculated for the period `r paste(range(d_beqi$YEAR), collapse = "-")` and months `r paste(range(settings[["months"]]), collapse = "-")`
+Percentiles for each indicator are given below. In addition, the number of samples (n) used to estimate these percentiles is provided. The percentiles have been calculated for the period `r paste(range(d_beqi$YEAR), collapse = "-")` and months `r paste(range(settings$months), collapse = "-")`.
 ```{r results='asis'}
 d <- ddply(
     .data = d_ind,
     .variables = c("OBJECTID", "ECOTOPE"),
     .fun = function(x) {
         x <- x[, !(names(x) %in% c("OBJECTID", "ECOTOPE", "YEAR", "POOLRUN", 
-                                   "poolArea", "POOLID", "nSamplesInPool", "N"))]
+                                   "poolArea", "POOLID", "nSamplesInPool"))]
         n <- sapply(X = x, FUN = function(x){sum(!is.na(x))})
-        x <- ldply(.data = x, .fun =  quantile, probs = c(0, 1, 95, 99, 100) / 100, na.rm = TRUE)
+        x <- ldply(
+            .data = x, 
+            .fun =  quantile, 
+            probs = c(0, 1, 5, 25, 50, 75, 95, 99, 100) / 100, 
+            na.rm = TRUE
+        )
         names(x)[names(x) == ".id"] <- "indicator"
         x$n <- n
         x
     }
 )
 print(xtable(d), type = "html")
-
 ```
 
 
 
-### Ecological Quality Ratios
+## Indicator Ecological Quality Ratios
 
-The following Ecological Quality Ratios (EQRs) will be calculated
+The following Ecological Quality Ratios (EQRs) are calculated:
 
-- For species richness:
-\[
-    EQR(S) = \frac{S_\mathrm{ass} - S_\mathrm{bad}}{S_\mathrm{ref} - S_\mathrm{bad}}
-\]
-- For Shannon's Index:
-\[
-    EQR(H) = \frac{H_\mathrm{ass} -  H_\mathrm{bad}}{H_\mathrm{ref} -  H_\mathrm{bad}}
-\]
-- For AMBI
-\[
-    EQR(AMBI) = \frac{\mathrm{AMBI}_\mathrm{bad} -  \mathrm{AMBI}_\mathrm{ass}}{\mathrm{AMBI}_\mathrm{bad} - \mathrm{AMBI}_\mathrm{ref}} = \frac{6 - \mathrm{AMBI}_\mathrm{ass}}{6}
-\]
-- For BEQI-2
-\[
-    EQR(BEQI2) = \frac{EQR(S) + EQR(H) + EQR(AMBI)}{3} + c
-\]
-where $c$ is an additive correction term, which is given as `CORR` in the table below.
+#### Species richness:
+
+EQR(_S_) = ( _S_<sub>ass</sub> - _S_<sub>bad</sub> ) / ( _S_<sub>ref</sub> - _S_<sub>bad</sub> )
+
+#### Shannon's Index:
+
+EQR(_H'_) = ( _H'_<sub>ass</sub> - _H'_<sub>bad</sub> ) / ( _H'_<sub>ref</sub> - _H'_<sub>bad</sub> )
+
+
+#### AMBI:
+
+EQR(AMBI) = ( AMBI<sub>bad</sub> - AMBI<sub>ass</sub> ) / ( AMBI<sub>bad</sub> - AMBI<sub>ref</sub> )
+
+#### BEQI2:
+
+EQR(BEQI2) = &#x2153; &#215; EQR(S) +  &#x2153; &#215; EQR(H') +  &#x2153; &#215; EQR(AMBI)
+
 <br>
 
-The 'bad' and 'reference' values can be found in the table below. This table is a copy of
-`r sQuote(settings[["ER-file"]])` as specified in the settings file.
+The 'bad' and 'ref' values can be found in the table below. This table is a copy of `r sQuote(basename(settings$files$ecotopes))` as specified in the settings file.
 ```{r results='asis'}
-d_erf <- readERF(filename = settings[["ER-file"]])
 print(xtable(d_erf), type = "html", include.rownames = FALSE)
 ```
 
 
 ```{r}
-d_erf$OBJECTID <- harmonize(d_erf$OBJECTID)
-d_erf$ECOTOPE  <- harmonize(d_erf$ECOTOPE)
+# add prefixes
 sel <- !(names(d_erf) %in% c("OBJECTID", "ECOTOPE", "RELAREA"))
 names(d_erf)[sel] <- paste("erf", names(d_erf)[sel], sep = "_")
 d_ind <- merge(x = d_ind, y = d_erf, all.x = TRUE, all.y = FALSE)
 ```
 
 
-```{r eval=any(is.na(d_ind$erf_SREF)), results='asis'}
-cat("WARNING: No reference data available for:\n\n")
-print(
-    xtable(d_ind[is.na(d_ind$erf_SREF), c("OBJECTID", "ECOTOPE"), drop = FALSE]), 
-    type = "html"
-)
-
-d_ind <- d_ind[!is.na(d_ind$erf_SREF), ]
-```
-
 ```{r}
-d_ind$S_EQR <- eqr(
-    x = d_ind$S, 
-    bad = d_ind$erf_SBAD, 
-    good = d_ind$erf_SREF
-)
-
-d_ind$H_EQR <- eqr(
-    x = d_ind$H, 
-    bad = d_ind$erf_HBAD, 
-    good = d_ind$erf_HREF
-)
-
-# estimate EQR of ITI (optional)
-if (!is.null(settings[["ITI-file"]])) {
-    d_ind$ITI_EQR <- eqr(
-        x = d_ind$ITI, 
-        bad = d_ind$erf_ITIBAD, 
-        good = d_ind$erf_ITIREF
-    )
-}
-
-# estimate EQR of FIBI (optional)
-if (!is.null(settings[["FIBI-file"]])) {
-    d_ind$FIBI_EQR <- eqr(
-        x = d_ind$FIBI, 
-        bad = d_ind$erf_FIBIBAD, 
-        good = d_ind$erf_FIBIREF
-    )
-}
+d_ind$S_EQR <- eqr(x = d_ind$S, bad = d_ind$erf_SBAD, good = d_ind$erf_SREF)
+d_ind$H_EQR <- eqr(x = d_ind$H, bad = d_ind$erf_HBAD, good = d_ind$erf_HREF)
 
 # estimate EQR of AMBI
-d_ind$AMBI_EQR <- eqr(
-    x = d_ind$AMBI, 
-    bad = d_ind$erf_AMBIBAD,
-    good = d_ind$erf_AMBIREF
-)
-
+d_ind$AMBI_EQR <- eqr(x = d_ind$AMBI, bad = d_ind$erf_AMBIBAD, 
+                      good = d_ind$erf_AMBIREF)
 
 # estimate BEQI2-EQR
 d_ind$BEQI2_EQR <- rowMeans(d_ind[, c("S_EQR", "H_EQR", "AMBI_EQR")])
 
-# apply inter-calibration correction of BEQI2
-d_ind$BEQI2_EQR <- d_ind$BEQI2_EQR + d_ind$erf_CORR
-
 ```
 
----
+
 
 ## Results
 
-The results are averaged to water body-ecotope-year-period combinations.
-
-The table below lists all results aggregated by OBJECTID, ECOTOPE and YEAR.
+The results are averaged to waterbody-ecotope-year-period combinations. The table below lists all results aggregated by OBJECTID, ECOTOPE and YEAR.
 
 ```{r results='asis',  eval=nrow(d_ind)>0L}
 # aggregate by pool run
 v <- c("OBJECTID", "ECOTOPE", "YEAR")
 w <- c(v, "nSamplesInPool", "poolArea", "RELAREA",
        "N", "S", "H", "AMBI", 
-       if(is.null(settings[["ITI-file"]])){NULL} else{"ITI"},
-       if(is.null(settings[["FIBI-file"]])){NULL} else{"FIBI"},
        "S_EQR", "H_EQR", "AMBI_EQR",
-       if(is.null(settings[["ITI-file"]])){NULL} else{"ITI_EQR"},
-       if(is.null(settings[["FIBI-file"]])){NULL} else{"FIBI_EQR"},
        "BEQI2_EQR"
 )
 
@@ -732,15 +524,7 @@ d <- ddply(
 )
 
 print(xtable(d), type = "html")
-write.csv(
-    x = d, 
-    file = file.path(
-        dirname(settings[["output-file"]]), 
-        paste0("ECOTOPE_", basename(settings[["output-file"]]))
-    ),
-    row.names = FALSE
-)
-
+write.csv(x = d, file = settings$files$out_ecotope, row.names = FALSE)
 ```
 
 
@@ -765,20 +549,11 @@ d <- ddply(
     }
 )
 print(xtable(d), type = "html")
-write.csv(
-    x = d, 
-    file = file.path(
-        dirname(settings[["output-file"]]), 
-        paste0("OBJECTID_", basename(settings[["output-file"]]))
-    ),
-    row.names = FALSE
-)
-
+write.csv(x = d, file = settings$files$out_objectid, row.names = FALSE)
 ```
 
 
 
----
 
     
     
@@ -797,18 +572,13 @@ van Loon, W.M.G.M. and A.J. Verschoor, 2012. Benthic Ecosystem Quality Index 2: 
 van Loon, W.M.G.M., A.J. Verschoor and A. Gittenberger, 2012. Benthic Ecosystem Quality Index 2: Design and Calibration of the BEQI-2 WFD Metric for Marine Benthos in Transitional Waters, Report RWS Waterdienst.
 
 
----
+
 ## Acknowledgements
  
-Dr. Angel Borja and the AZTI-TECHNALIA, Spain, are acknowledged for their kind permission to use the AMBI species list by the BEQI-2 tool only.
- 
-If you want to use the AMBI tool and species list stand alone, you can download these from the website ambi.azti.es.
- 
-For more information on the AMBI software and species list, please contact Dr. Angel Borja, email: aborja@azti.es.
+Angel Borja (AZTI-TECHNALIA, Spain), is kindly acknowledged for the permission to use the standard AMBI species list (ambi.azti.es).
 
 
 
----
 
 
 ## Session information 

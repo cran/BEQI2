@@ -1,0 +1,19 @@
+{
+    "title": "BEQI-2 analysis WADDEN_SEA_BALGZDB-P5",
+    "user": "Dennis and Willem",
+    "date": "2014-12-24",
+    "files": {
+        "BEQI2": "../BEQI2-FILES/INPUT-FILES/TEST_WADDEN_SEA_BALGZDB-P5.csv",
+        "SpeciesNames": "../REF-FILES/TAXA-TWN-2013-11-27.csv",
+        "Ecotopes": "../REF-FILES/BEQI2-Ecotopes-2014-04-11.csv",
+        "AMBI": "../REF-FILES/AMBI-NL+.csv"
+    },
+    "months": [8,9],
+    "pooling": {
+        "enabled": false,
+        "randomSeed": 314,
+        "targetArea": [0.09, 0.11]
+    },
+    "genusToSpeciesConversion": true
+}
+

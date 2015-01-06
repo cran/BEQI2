@@ -1,4 +1,3 @@
-### Data pooling
 ```{r}
 
 # number of pooling runs (hard coded TODO: in JSON-file?)
@@ -21,7 +20,7 @@ d <- ldply(
                 ux$POOLID <- pool(
                     sampleId = ux$ID, 
                     area = ux$AREA, 
-                    targetArea = settings[["target area"]]
+                    targetArea = settings$pooling$targetarea
                 )
 
                 # merge pool identifiers to original data set
@@ -42,18 +41,13 @@ tmp <- dcast(
     ID ~ POOLRUN, 
     value.var= "POOLID"
 )
-write.csv(
-    x = tmp, 
-    file = settings[["pool-file"]],
-    row.names = FALSE,
-    na = ""
-)
+write.csv(x = tmp, file = settings$files$pooling, row.names = FALSE, na = "")
 tmp <- as.matrix(tmp[, -1])
 toLog("INFO", "pooling results have been stored.")
 
 ```
 
-The samples in the BEQI2-input file have been pooled. An average of `r round(100 * sum(is.na(tmp))/ length(tmp), 2)` percent of the samples could not be pooled in each run. These samples have been removed. Each sample has been pooled for at least `r min(apply(X = tmp, MARGIN = 1, FUN = function(x) {sum(!is.na(x))}))` out of 10 times.  The results have been written to `r settings[["pool-file"]]`.
+The samples in the BEQI2-input file have been pooled. An average of `r round(100 * sum(is.na(tmp))/ length(tmp), 2)` percent of the samples could not be pooled in each run. These samples have been removed. Each sample has been pooled for at least `r min(apply(X = tmp, MARGIN = 1, FUN = function(x) {sum(!is.na(x))}))` out of 10 times.  The results have been written to `r basename(settings$files$pooling)`.
 
 
 ```{r}

@@ -63,43 +63,11 @@ print(
 )
 
 ## ----echo=FALSE, results='asis'------------------------------------------
-d <- readITI(
-    filename = system.file("extdata", "REF-FILES", "ITI.csv", 
-        package = "BEQI2")
-)
-print(
-    xtable(x = d[sample.int(n = nrow(d), size = 30), ], align = "llr"), 
-    include.rownames = FALSE,
-    size = "footnotesize",
-    add.to.row = list(list(-1), "\\rowcolor{blue!15}")
-)
-
-## ----echo=FALSE, results='asis'------------------------------------------
-d <- data.frame(
-    ITI = c( "I", "II", "III", "IV"),
-    description = c(
-        "Suspension feeders",
-        "Interface feeders",
-        "Surface deposit feeders",
-        "Subsurface deposit feeders"
-    )
-)
-print(
-    xtable(x = d, align = "lrl"), 
-    include.rownames = FALSE,
-    size = "footnotesize",
-    add.to.row = list(list(-1), "\\rowcolor{blue!15}")
-)
-
-## ----echo=FALSE, results='asis'------------------------------------------
 filename <- system.file(
-    "extdata", "REF-FILES", "BEQI2-Ecotopes-2014-04-11.csv", 
+    "extdata", "REF-FILES", "BEQI2-Ecotopes.csv", 
     package = "BEQI2"
 )
 d <- read.csv(file = filename)
-d$LITAREA <- NULL
-d$LITREFS <- NULL
-d$OMSVG <- NULL
 print(
     xtable(x = d), 
     include.rownames = FALSE,

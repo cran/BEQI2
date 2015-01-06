@@ -20,7 +20,7 @@ d <- d[d$taxonlevel %in% c("Genus", "Species"), c("ID", "TAXON", "VALUE")]
 d <- genusToSpecies(id = d$ID, taxon = d$TAXON, count = d$VALUE)
 names(d) <- toupper(names(d))
 
-# merge new counts to d_beqi data
+# merge new counts with d_beqi data
 d_beqi <- merge(x = d_beqi, y = d, all = TRUE)
 sel <- !is.na(d_beqi$COUNT)
 d_beqi$VALUE_OLD <- d_beqi$VALUE
@@ -32,7 +32,7 @@ d_beqi$VALUE_NEW <- d_beqi$VALUE
 d_beqi$hasChanged <- abs(d_beqi$VALUE_NEW - d_beqi$VALUE_OLD) >  1.0e-9
 
 # number of records to report
-nRecords <- min(25L, sum(d_beqi$hasChanged))
+nRecords <- min(15L, sum(d_beqi$hasChanged))
 ```
 The  number of records that have been selected for genus to species conversion is `r sum(d_beqi$hasChanged)`. The first `r nRecords` records are given below (remainder has been removed to decrease the size of this report). For each record both the old counts (`VALUE_OLD`, counts before conversion) and new counts (`VALUE_NEW`, counts after conversion) are given. 
 

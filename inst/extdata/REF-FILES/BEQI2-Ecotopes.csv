@@ -1,0 +1,15 @@
+"OBJECTID","DESCRIPTION","ECOTOPE","RELAREA","SREF","SBAD","HREF","HBAD","AMBIREF","AMBIBAD"
+"nl89_westsde","Westerschelde","Mesohaline-Intertidal","0.11",29,0,3.3,0,0.57,6
+"nl89_westsde","Westerschelde","Mesohaline-Subtidal","0.17",22,0,3.2,0,0.54,6
+"nl89_westsde","Westerschelde","Polyhaline-Intertidal","0.18",41,0,3.6,0,1.2,6
+"nl89_westsde","Westerschelde","Polyhaline-Subtidal","0.54",31,0,3.8,0,0.63,6
+"nl89_oostsde","Oosterschelde","Polyhaline-Intertidal","0.26",45,0,3.7,0,0.54,6
+"nl89_oostsde","Oosterschelde","Polyhaline-Subtidal","0.74",67,0,5.1,0,0.5,6
+"nl89_veersmr","Lake Veere","Polyhaline-Subtidal",1,30,0,3.8,0,0.52,6
+"nl89_grevlemr","Lake Grevelingen","Polyhaline-Subtidal",1,44,0,4.2,0,0.54,6
+"NL81_2","Dollard","Mesohaline-Intertidal",1,22,0,3.3,0,0.54,6
+"NL81_1","Wadden Sea","Polyhaline-Intertidal","0.59",29,0,3.6,0,0.54,6
+"NL81_1","Wadden Sea","Polyhaline-Subtidal","0.41",23,0,3.5,0,0.5,6
+"NL95_1A2A","Delta Coast","Polyhaline-Subtidal",1,33,0,3.8,0,0.009,6
+"NL95_3A","Dutch Coast","Polyhaline-Subtidal",1,30,0,4,0,0.16,6
+"NL95_4A","Wadden Coast","Euhaline-Subtidal",1,30,0,3.7,0,0.12,6

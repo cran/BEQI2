@@ -18,16 +18,30 @@ function(filename = NULL, tmpdir = tempfile(pattern = "BEQI2"), browse = TRUE) {
     
     # interactive selection of filename
     if (is.null(filename)) {
-        filename <- tk_choose.files(
-            default = "", 
-            caption = "Select file with BEQI2 settings",
-            multi = FALSE, 
-            filters = matrix(data = c("BEQI2 settings", ".json"), nrow = 1)
-        )
+        if (capabilities("tcltk")) {
+            filename <- tk_choose.files(
+                default = "", 
+                caption = "Select file with BEQI2 settings",
+                multi = FALSE, 
+                filters = matrix(data = c("BEQI2 settings", ".json"), nrow = 1)
+            )
+        } else {
+            stop(
+                "The 'tcltk'-package is not supported on this machine.\n",
+                "Please provide a valid filename as function argument\n",
+                call. = FALSE
+            )
+        }
+    }
+
+    # stop if the user presses Cancel or Esc
+    if(length(filename) == 0L) {
+        message("The BEQI-2 run has been cancelled by the user.")
+        return(invisible(NULL))
     }
     
     # check if filename exists
-    if (length(filename) == 0L || !file.exists(filename)) {
+    if (!file.exists(filename)) {
         stop(
             sprintf("JSON-file %s does not exist", sQuote(filename)), 
             call. = FALSE
@@ -40,13 +54,47 @@ function(filename = NULL, tmpdir = tempfile(pattern = "BEQI2"), browse = TRUE) {
     # read settings
 	settings <- readSettings(filename)
     
+    # set working directory
+    owd <- getwd()
+    on.exit(setwd(owd))
+    setwd(dirname(filename))
+
+    # normalize paths (full paths to make package more robust)
+    for (f in names(settings$files)) {
+        settings$files[[f]] <- suppressWarnings(normalizePath(settings$files[[f]]))
+    }
+    
+    # add output files
+    outputDir <- file.path(
+        getwd(), 
+        paste0("OUTPUT-", format(Sys.time(), format = "%Y%m%dT%H%M%S"))
+    )
+    dir.create(outputDir)
+    prefix <- sub(
+        pattern = "\\.[[:alnum:]]+$", 
+        replacement = "", 
+        x = basename(settings$files$beqi2)
+    )
+    settings$files$log <- file.path(outputDir, 
+        paste0("LOG-", prefix, ".log"))
+    settings$files$out_ecotope <- file.path(outputDir, 
+        paste0("ECOTOPE-", prefix, ".csv"))
+    settings$files$out_objectid <- file.path(outputDir, 
+        paste0("OBJECTID-", prefix, ".csv"))
+    if (settings$pooling$enabled) {
+        settings$files$pooling <- file.path(outputDir, 
+            paste0("POOLING-", prefix, ".csv"))
+    }
+    settings$files$report <- file.path(outputDir, 
+        paste0("REPORT-", prefix, ".html"))
+
     # start log-file
     toLog <- function(level = c("INFO", "WARNING", "ERROR"), message) {
         level <- match.arg(level)
         cat(
             format(Sys.time()), " [", level, "] ", message, "\n", 
             sep = "",
-            file = settings[["log-file"]], 
+            file = settings$files$log, 
             append = TRUE
         )
         if (level != "INFO") {
@@ -57,89 +105,205 @@ function(filename = NULL, tmpdir = tempfile(pattern = "BEQI2"), browse = TRUE) {
             )
         }
     }
-    toLog("INFO", "Starting new BEQI-2 session")
-    on.exit(toLog("INFO", "Stopping BEQI-2 session"), add = TRUE)
+    toLog("INFO", "Starting a new BEQI-2 session")
+    on.exit(toLog("INFO", "This BEQI-2 session has been terminated"), add = TRUE)
 
     # initialize random number generator
-    toLog("INFO", "Initializing pseudo random number generator...")
-    if (is.null(settings[["random seed"]])) {
-        toLog("INFO", "No seed has been specified.")
-        toLog("INFO", "The default initialization process will be followed.")
-    } else {
-        set.seed(seed = settings[["random seed"]])
-        toLog("INFO", "Done.")
+    if (settings$pooling$enabled) {
+        toLog("INFO", "Initializing the pseudo random number generator...")
+        if (is.null(settings$pooling$randomseed)) {
+            toLog("INFO", "No seed has been specified.")
+            toLog("INFO", "The default initialization process will be followed.")
+        } else {
+            set.seed(seed = settings$pooling$randomseed)
+        }
+        toLog("INFO", "the pseudo random number generator has been initialized.")
     }
     
     
     # check existence of BEQI-2 file
-    toLog("INFO", "Checking existence of BEQI-2 file...")
-    if (!file.exists(settings[["BEQI-file"]])) {
-        toLog("ERROR", "BEQI-2 file not found")
-        return()
+    toLog("INFO", 
+          sprintf(
+                "Checking the existence of BEQI-2 file %s...",
+                sQuote(basename(settings$files$beqi2))
+          )
+    )
+    if (!file.exists(settings$files$beqi2)) {
+        toLog("ERROR", "The BEQI-2 file has not been found")
+        return(invisible(NULL))
     }
-    toLog("INFO", "BEQI-2 file found")
-    
-    # check existence of TWN-file file
-    toLog("INFO", "Checking existence of TWN-file...")
-    if (!file.exists(settings[["TWN-file"]])) {
-        toLog("ERROR", "TWN-file not found")
-        return()
-    }
-    toLog("INFO", "TWN-file found")
+    toLog("INFO", "the BEQI-2 file has been found")
 
+    # read BEQI2-file
+    toLog("INFO", "Reading the BEQI2-file...")
+    d_beqi <- tryCatch(
+        readBEQI(filename = settings$files$beqi2),
+        error = function(e) {
+            toLog("ERROR", sprintf("while reading BEQI2-file. %s", e$message))
+        }
+    )
+    toLog("INFO", "the BEQI-2 file has been read")
+    
+    # check if records are within the period of interest
+    month <- as.integer(format(d_beqi$DATE, format = "%m"))
+    inPOI <- (month >= settings$months[1]) & 
+             (month <= settings$months[2])
+    if (!any(inPOI)) {
+        toLog("ERROR", 
+            sprintf("No months in file %s are in the specified interval [%s].",
+                sQuote(basename(settings$files$beqi2)),
+                paste(settings$months, collapse = ", ")
+            )
+        )
+    }
+
+    # check existence of TWN-file
+    toLog("INFO", 
+          sprintf(
+                "Checking the existence of TWN-file %s...",
+                sQuote(basename(settings$files$speciesnames))
+          )
+    )
+    if (!file.exists(settings$files$speciesnames)) {
+        toLog("ERROR", "The TWN-file has not been found")
+        return(invisible(NULL))
+    }
+    toLog("INFO", "the TWN-file has been found")
+
+    # read TWN-file
+    toLog("INFO", "Reading the TWN-file...")
+    d_twn <- tryCatch(
+        readTWN(filename = settings$files$speciesnames),
+        error = function(e) {
+            toLog("ERROR", sprintf("while reading TWN-file. %s", e$message))
+        }
+    )
+    toLog("INFO", "the TWN-file has been read")
+    
+    # read AMBI's
+    d_sens <- suppressMessages(readAMBI())
+    names(d_sens) <- c("TAXON", "AMBI")
+    d_sens$TAXON <- rename(x = d_sens$TAXON, from = d_twn$taxonname, to = d_twn$taxon)
+    d_sens <- unique(na.omit(d_sens))
+    if (!is.null(settings$files$ambi) && (settings$files$ambi != "")) {
+        toLog("INFO", 
+              sprintf(
+                    "Checking the existence of AMBI-file %s...",
+                    sQuote(basename(settings$files$ambi))
+              )
+        )
+        if (!file.exists(settings$files$ambi)) {
+            toLog("ERROR", "the AMBI-file has not been found")
+            return(invisible(NULL))
+        }
+        toLog("INFO", "the AMBI-file has been found")
+        toLog("INFO", "Reading the AMBI-file...")
+        d <- tryCatch(
+            readAMBI(filename = settings$files$ambi),
+            error = function(e) {
+                toLog("ERROR", sprintf("while reading AMBI-file. %s", e$message))
+            }
+        )
+        toLog("INFO", "the AMBI-file has been read")
+        names(d) <- c("TAXON", "AMBI_user")
+        d$TAXON <- rename(x = d$TAXON, from = d_twn$taxonname, to = d_twn$taxon)
+        d <- unique(na.omit(d))
+        d <- merge(x = d_sens, y = d, all = TRUE) 
+        sel <- is.na(d$AMBI_user)
+        d$AMBI_user[sel] <- d$AMBI[sel]
+        d_sens <- data.frame(TAXON = d$TAXON, AMBI = d$AMBI_user,
+                             stringsAsFactors = FALSE)
+    }
+
+    # read ecotope reference file
+    toLog("INFO", 
+          sprintf(
+                "Checking the existence of ecotope reference file %s...",
+                sQuote(basename(settings$files$ecotopes))
+          )
+    )
+    if (!file.exists(settings$files$ecotopes)) {
+        toLog("ERROR", "the ecotope reference file has not been found")
+        return(invisible(NULL))
+    }
+    toLog("INFO", "the ecotope reference file has been found")
+    toLog("INFO", "Reading the ecotope reference file...")
+    extra <- NULL
+    if (!is.null(settings$files$iti)) {
+        extra <- c(extra, "ITI")
+    }
+    if (!is.null(settings$files$fibi)) {
+        extra <- c(extra, "FIBI")
+    }
+    d_erf <- tryCatch(
+        readERF(filename = settings$files$ecotopes, extra = extra),
+        error = function(e) {
+            toLog("ERROR", sprintf("while reading ecotope reference file. %s", e$message))
+        }
+    )
+    toLog("INFO", "the ecotope reference file has been read")
+
+    # check if reference data are available for all records in d_beqi
+    toLog("INFO", "Checking if reference data are available for all records in the BEQI2-file...")
+    tmp1 <- unique(paste(d_beqi$OBJECTID, d_beqi$ECOTOPE, sep = "/"))
+    tmp2 <- unique(paste( d_erf$OBJECTID,  d_erf$ECOTOPE, sep = "/"))
+    isMissing <- is.na(match(x = tmp1, table = tmp2))
+    if (any(isMissing)) {
+        toLog("ERROR", sprintf(
+                "The following combinations of %s are missing in the ecotope reference file: %s",
+                sQuote("OBJECTID/ECOTOPE"),
+                toString(tmp1[isMissing])
+            )
+        )
+        return(invisible(NULL))
+    }
+    toLog("INFO", "reference data are available for all records in the BEQI2-file.")
+    
 	# create temporary directory
 	if (!file.exists(tmpdir)) {
-        toLog("INFO", "Creating temporary directory...")
+        toLog("INFO", "Creating a temporary directory...")
 		dir.create(tmpdir)
 	}
-    toLog("INFO", "Temporary directory created.")
+    toLog("INFO", "a temporary directory has been created.")
 
-	# copy template of report to temporary directory
-    toLog("INFO", "Populating temporary directory...")
+	# copy template of the report to temporary directory
+    toLog("INFO", "Populating the temporary directory...")
 	templates <- list.files(
 		path = system.file("Rmd", package = "BEQI2"),
 		pattern = "\\.Rmd$", full.names = TRUE)
 	file.copy(from = templates, to = tmpdir)
-    toLog("INFO", "Temporary directory populated.")
+    toLog("INFO", "the temporary directory has been populated.")
 
     # create Markdown document 
     # (code below works better than knit2html)
-    toLog("INFO", "Checking existence of directory to store report-file...")
-    if (!file.exists(dirname(settings[["report-file"]]))) {
-        toLog("ERROR", "directory not found.")
-        return()
-    }
-    toLog("INFO", "directory found.")
-
     toLog("INFO", "Starting to create a report...")
-    owd <- setwd(tmpdir)
-    on.exit(setwd(owd), add = TRUE)
+    setwd(tmpdir)
 	suppressMessages(
-        res <- try(knit(input = "beqi2.Rmd", quiet = TRUE), silent = TRUE)
+        mdfile <- try(knit(input = "beqi2.Rmd", quiet = TRUE), silent = TRUE)
     )
-    if (inherits(res, "try-error")) {
+    if (inherits(mdfile, "try-error")) {
         toLog(
             level = "ERROR", 
-            message = toString(attr(res, "condition")$message)
+            message = toString(attr(mdfile, "condition")$message)
         )
-        return()
+        return(invisible(NULL))
     }
-    toLog("INFO", "Report created.")
-    toLog("INFO", "Converting report to HTML...")
+    toLog("INFO", "a report has been created.")
+    toLog("INFO", "Converting the report to HTML...")
 	output <- markdownToHTML(
-		file  = "beqi2.md", 
+		file  = mdfile, 
 		output = NULL,
         options = getOption("markdown.HTML.options"),
         extensions = getOption("markdown.extensions"),
     	title = "Benthic Ecosystem Quality Index 2 Report",
         stylesheet = system.file("css", "beqi2.css", package = "BEQI2")
 	)
-    writeLines(text = output, con = settings[["report-file"]])
-    toLog("INFO", "Report converted to HTML.")
+    writeLines(text = output, con = settings$files$report)
+    toLog("INFO", "the report has been converted to HTML.")
 
 	# view result
 	if (browse) {
-		browseURL(settings[["report-file"]])
+		browseURL(settings$files$report)
 	}
     
     # finalization

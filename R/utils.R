@@ -14,7 +14,7 @@ function(x) {
 }
 
 
-#'  Test on Azoic Samples
+#'  Test for Azoic Samples
 #'
 #' 	Case-insensitive test for taxa starting with 'azoi'
 #'
@@ -35,22 +35,20 @@ function(x) {
 #' 	This function reads BEQI settings files (JSON)
 #'
 #' 	@param filename name of BEQI input file (\code{character})
-#'  @param verbose print informative messages?
 #'
 #' 	@details The function performs the following tasks:
 #' 	\itemize{
 #' 		\item{checks the existence of \code{filename};}
 #'  	\item{reads JSON file while ignoring C-style comments;}
-#'  	\item{converts relative to absolute paths}
-#'      \item{checks filename extensions}
-#'  	\item{checks if months are in the set \{1, 2, \ldots, 12\}}
+#'      \item{checks avaiability of required keys in the JSON-file}
+#'  	\item{checks values in JSON-file}
 #'  }
 #'
-#'	@import RJSONIO
+#'	@import jsonlite
 #'    
 #'  @export
 readSettings <- 
-function(filename, verbose = getOption("verbose")) {
+function(filename) {
 
     # check existence of settings file
 	if (!file.exists(filename)) {
@@ -58,18 +56,14 @@ function(filename, verbose = getOption("verbose")) {
 	}
 
 	# read settings file
-	settings <- readLines(con = filename)
+	settings <- readLines(con = filename, warn = FALSE)
 
 	# remove all C-style comments (//)
 	# Note: comments are formally not part of the JSON specification.
-	# Note: RJSONIO::fromJSON cannot handle comments with colons
 	settings <- sub(pattern = "//.*$", replacement = "", x = settings)
 
-	# create single string
-	settings <- paste(settings, collapse = "")
-
 	# parse JSON
-	if (!isValidJSON (settings, asText = TRUE)) {
+	if (!validate(settings)) {
 		stop(
 			sprintf(
 				"Errors found in %s. Check JSON-format (e.g. brackets, braces, trailing comma's)", 
@@ -78,73 +72,90 @@ function(filename, verbose = getOption("verbose")) {
 			call. = FALSE
 		)
 	}
-	settings <- fromJSON(settings, simplify = FALSE)
+	settings <- fromJSON(settings)
     
-    # set working directory
-    if (is.null(settings$'working directory')) {
-        settings$'working directory' <- dirname(filename)
-        if (verbose) {
-            message("No working directory has been specified in settings file ", 
-                    sQuote(basename(filename)))
-            message("The directory containing the settings file will therefore")
-            message("be used as working directory: ",
-                    sQuote(settings$'working directory'))
-        }
+    # check if required keys are available
+    requiredKeys <- c("title", "user", "date", "files",
+                      "months", "pooling", "genusToSpeciesConversion")
+    names(settings) <- tolower(names(settings))
+    found <- tolower(requiredKeys) %in% names(settings)
+    if (any(!found)) {
+        stop(
+            sprintf(
+                fmt = "key %s is missing in JSON-file %s\n(see package vignette)", 
+                toString(sQuote(requiredKeys[!found])), 
+                sQuote(basename(filename))
+            ), 
+            call. = FALSE
+        )
     }
-    owd <- getwd()
-    on.exit(setwd(owd))
-    setwd(settings$'working directory')
+    
+    # check required files
+    requiredKeys <- c("BEQI2", "SpeciesNames", "Ecotopes")
+    names(settings$files) <- tolower(names(settings$files))
+    found <- tolower(requiredKeys) %in% names(settings$files)
+    if (any(!found)) {
+        stop(
+            sprintf(
+                fmt = "key files:%s is missing in JSON-file %s\n(see package vignette)", 
+                toString(sQuote(requiredKeys[!found])), 
+                sQuote(basename(filename))
+            ), 
+            call. = FALSE
+        )
+    }
 
-	# normalize paths (full paths to make package more robust)
-    for (f in paste(c("BEQI", "TWN", "ITI", "FIBI", "ER", "AMBI"), "file", sep = "-")) {
-        if (!is.null(settings[[f]])) {
-            settings[[f]] <- suppressWarnings(
-                normalizePath(settings[[f]])
+    # check months
+    if (!is.integer(settings$months) | length(settings$months) != 2L) {
+    	stop(
+            "key 'months' should be an integer vector of length 2", 
+             call. = TRUE
+        )
+    }
+	if (!all(settings$months %in% 1:12)) {
+		stop("elements of key 'months' should be in [1, 12]", call. = TRUE)
+	}
+    if ((settings$months[2] - settings$months[1]) < 0) {
+		stop(
+            "First month to analyse should be smaller than or equal to last month", 
+            call. = TRUE
+        )
+	}
+
+    # check data pooling
+    names(settings$pooling) <- tolower(names(settings$pooling))
+    if (!is.logical(settings$pooling$enabled)) {
+        stop(
+            "key 'pooling:enabled' should be either 'true' or 'false'", 
+            call. = TRUE
+        )
+    }
+    if (settings$pooling$enabled) {
+        settings$pooling$targetarea <- range(settings$pooling$targetarea)
+        if (!is.numeric(settings$pooling$targetarea) | 
+            (length(settings$pooling$targetarea) != 2L)) {
+        	stop(
+                "key 'pooling:targetArea' should be a numeric vector of length 2", 
+                call. = TRUE
+            )
+        }
+        settings$pooling$randomseed <- as.integer(settings$pooling$randomseed)
+        if (!is.integer(settings$pooling$randomseed)) {
+            stop(
+                "key 'pooling:randomSeed' needs to be an integer vector of length 1", 
+                call. = TRUE
             )
         }
     }
-    for (f in paste(c("report", "log", "pool", "output"), "file", sep = "-")) {
-        settings[[f]] <- file.path(
-            normalizePath(dirname(settings[[f]])),
-            basename(settings[[f]])
-        )
-    }
-    
-    # check extensions
-    isCSV <- grepl(pattern = "\\.csv$", x = settings[["output-file"]],
-                   ignore.case = TRUE)
-    if (!isCSV) {
-        stop(
-            sprintf(
-                "Output file %s\nshould have extension 'csv'.", 
-                sQuote(settings[["output-file"]])
-            ),
-            call. = TRUE
-        )
-    }
-    isHTML <- grepl(pattern = "\\.html|\\.htm$", x = settings[["report-file"]],
-                    ignore.case = TRUE)
-    if (!isHTML) {
-        stop(
-            sprintf(
-                "Report file %s\nshould have extension 'html' or 'htm'.", 
-                sQuote(settings[["report-file"]])
-            ),
-            call. = TRUE
-        )
-    }
-    
-    # guarantee proper ordering of target area for pooling
-    settings$`target area` <- range(unlist(settings$`target area`))
-    
-	# check months
-	if (!(settings$months[[1]] %in% 1:12)) {
-		stop("month should be in [1, 12]", call. = TRUE)
-	}
-	if (!(settings$months[[2]] %in% 1:12)) {
-		stop("month should be in [1, 12]", call. = TRUE)
-	}
 
+    # genus to species conversion
+    if (!is.logical(settings$genustospeciesconversion)) {
+        stop(
+            "key 'genusToSpeciesConversion' should be either 'true' or 'false'", 
+            call. = TRUE
+        )
+    }
+    
 	# return results
 	settings
 }
@@ -162,15 +173,17 @@ function(filename, verbose = getOption("verbose")) {
 #' 		\item{checks the existence of \code{filename};}
 #'  	\item{checks availablitity of required columns (case insensitive);}
 #'      \item{make column names with aggregation data case-insensitive;}
-#'  	\item{removes redundant spaces}
-#'      \item{checks if DATE-field adheres to ISO 8601 (YYYY-mm-dd)}
+#'  	\item{removes redundant spaces;}
+#'      \item{checks if DATE-field adheres to ISO 8601 (YYYY-mm-dd);}
 #'  	\item{constructs a unique identifier \code{ID} by concatenating 
-#'          columns \code{OBJECTID} and \code{DATE}}
-#'      \item{aggregate (by summation) VALUE-fields of records that only differ in VALUE-field value}
-#'      \item{checks that each \code{ID} has a unique \code{AREA}}
-#'      \item{checks azoic samples for VALUE=0}
-#'      \item{checks VALUE-field on missing values}
-#'      \item{checks if VALUE-field is an integer}
+#'          columns \code{OBJECTID} and \code{DATE};}
+#'      \item{aggregate (by summation) VALUE-fields of records that only differ 
+#'          in VALUE-field value;}
+#'      \item{checks that each \code{ID} has a unique \code{AREA};}
+#'      \item{checks azoic samples for VALUE=0;}
+#'      \item{removes records with VALUE=0, not belonging to azoic samples;}
+#'      \item{checks VALUE-field on missing values;}
+#'      \item{checks if VALUE-field is an integer;}
 #'  }
 #'
 #' 	@references Willem van Loon, 2013. BEQI2 INPUT FORMAT
@@ -228,11 +241,9 @@ function(filename) {
             call. = FALSE
         )
     }
-
-    # coerce non-numeric VALUEs to NA
-    d$VALUE <- suppressWarnings(as.numeric(d$VALUE))
     
     # check VALUE field on integers
+    d$VALUE <- suppressWarnings(as.numeric(d$VALUE))
     isInteger <- (abs(round(d$VALUE) - d$VALUE) < .Machine$double.eps)
     index <- which(is.na(isInteger) | !isInteger)
     if (length(index) != 0L) {
@@ -321,7 +332,7 @@ function(filename) {
     d$INDEX <- NULL
 
     # handle azoic samples
-    index <- grep(pattern = "^Azoi", x = d$TAXON, ignore.case = TRUE)
+    index <- which(isAzoic(x = d$TAXON))
     if (length(index) != 0L) {
         if (isTRUE(any(d$VALUE[index] != 0L))) {
             warning(
@@ -333,6 +344,34 @@ function(filename) {
             )
         }
         d$VALUE[index] <- 0L
+    }
+    
+    # remove non-Azoic records with zero counts as these are redundant 
+    # and won't affect the results
+    isZero <- (d$VALUE == 0L) & !isAzoic(x = d$TAXON)
+    if (any(isZero)) {
+        warning(
+            sprintf(
+                paste(
+                    "Non-azoic records (n=%s) found with zero VALUE-field.",
+                    "These records are redundant and will be excluded."
+                ),
+                sum(isZero)
+            ),
+            call. = FALSE
+        )
+        d <- d[!isZero, ]
+    }
+    
+    # final check
+    if (nrow(d) == 0L) {
+        stop(
+            sprintf(
+                fmt = "No valid records found in: %s",
+                sQuote(filename)
+            ), 
+            call. = FALSE
+        )
     }
 
 	# return content of file
@@ -700,7 +739,8 @@ function(filename, which = c("ITI", "FIBI")) {
 #'
 #'  This function reads and checks files with reference values
 #'
-#' 	@param filename name of the ecotopes reference file (character)
+#' 	    @param filename name of the ecotopes reference file (character)
+#'      @param extra additional user-defined indices to be checked (\code{character}, see details)
 #'
 #' @details The function performs the following tasks:
 #' 	\itemize{
@@ -709,12 +749,19 @@ function(filename, which = c("ITI", "FIBI")) {
 #'  	\item{removes redundant spaces}
 #'  	\item{removes duplicated records}
 #'  }
+#'  
+#'  Argument \code{extra} is a \code{character} vector of additional benthic 
+#'  indices to be checked for. For example, if \code{extra = "ITI"}, then
+#'  the ecotope reference file should also contain columns ITIREF and ITIBAD.
+#'  
+#'  The format of the ecotopes reference file is documented in the 
+#'  BEQI2-package vignette.
 #'
 #'  @references Van Loon, W, 2013. Loon2013-BEQI2-Specs-Ecotopes-27nov.doc
 #'  
 #' 	@export
 readERF <-
-function(filename) {
+function(filename, extra = NULL) {
 
 	# check if 'filename' exists
 	if (!file.exists(filename)) {
@@ -725,9 +772,8 @@ function(filename) {
 	}
 
 	# read file 'filename'
-    # NB: column names like "AMBI+" are also allowed
 	d <- try(
-        read.csv(file = filename, as.is = TRUE, check.names = FALSE), 
+        read.csv(file = filename, as.is = TRUE), 
         silent = TRUE
     )
 	if (inherits(d, "try-error")) {
@@ -738,8 +784,13 @@ function(filename) {
 	}
 
 	# check column names (case insensitive)
-	requiredColumns <-  c("OBJECTID", "ECOTOPE", "RELAREA", "SREF", "SBAD", 
-        "HREF", "HBAD")
+	requiredColumns <- c("OBJECTID", "ECOTOPE", "RELAREA", 
+        "SREF", "SBAD", "HREF", "HBAD", "AMBIREF", "AMBIBAD")
+    if (!is.null(extra)) {
+        requiredColumns <- c(requiredColumns,
+            paste0(rep(extra, each = 2), c("REF", "BAD"))
+        )
+    }
 	missingColumns <- setdiff(requiredColumns, names(d))
 	if (length(missingColumns) > 0L) {
 		stop(
@@ -773,6 +824,17 @@ function(filename) {
 		message("These will be removed")
 		d <- d[!isDuplicated, ]
 	}
+
+    # harmonize columns to make case-insensitive matching possible
+    d <- as.data.frame(
+    	lapply(X = d, FUN = function(x) {
+			if (is.character(x)) {
+				x <- harmonize(x)
+			}
+			x
+		}),
+        stringsAsFactors = FALSE
+	)
 
     # return content of file
 	d
@@ -934,43 +996,23 @@ function(sampleId = 1:length(area), area, targetArea, maxTry = 100L) {
 
 
 
-# # if ntry pooled areas have been tried without success
-# sample  run1 run2 run3 run4 .. run 10
-# 1       1
-# 2       1
-# 3       2    
-# 4       2
-# 5       NA
-
-
-# tests
-# target area 0.09-0.11
-# all samples have area 0.10 -> no pooling possible
-# all samples have area 0.6 -> no pooling possible
-# all samples have area 0.10 -> no pooling necessary
-# all samples have area 0.01 -> pooling possible
-# sampling order matters: 0.06, 0.06, 0.03, 0.03, 0.03, 0.01: no pooling
-# sampling order matters: 0.01, 0.03, 0.03, 0.03, 0.06, 0.06: pooling
-# sampling order matters: 0.06, 0.03, 0.01, 0.06, 0.03, 0.03: pooling
-
-
-
-
-
-
-
-
-
-
 
 #'  Ecological Quality Ratio (EQR)
 #'
+#'  The ecological quality ratio is the ratio beween a parameter value and its
+#'  reference value:  
+#'  \deqn{EQR = \frac{x-bad}{good-bad}}{EQR = (x-bad)/(good-bad)}
+#'  Depending on \code{bad} and \code{good}, the EQR usually 
+#'  (but not necessarily!) varies between 0 (bad ecological quality) and 1 (good
+#'  ecological quality).
+#'  
 #'
 #' 	@param x numeric vector containing benthic indices
 #'  @param bad the reference value for a bad status
 #'  @param good the reference value for a good status
 #'
-#'  @return  numeric vector with EQR
+#'  @return  numeric vector with EQR-values: low values indicate bad ecological
+#'      quality and high values indicate good ecological quality.
 #'  
 #'  @export
 eqr <- function(x, bad, good) {
@@ -992,8 +1034,8 @@ eqr <- function(x, bad, good) {
 
 #'  Renaming Taxon Names
 #'
-#'  Convert taxon name \code{x} to taxon name \code{new} by looking it up in
-#'  \code{old}. Look-up is case insensitive.
+#'  Convert taxon name \code{x} to taxon name \code{to} by looking it up in
+#'  \code{from}. Look-up is case insensitive.
 #'
 #'  @param x character vector with names
 #'  @param from character vector of old names
@@ -1036,7 +1078,7 @@ function(x, from, to) {
 #'
 #'  @param x character vector
 #'
-#'  @return character vector with harmonized names
+#'  @return character vector with harmonized names (i.e., same case)
 #'  
 #'  @examples 
 #'  x <- c("FOO", "Foo", "bar", "FOO", "bar", "FOO", "Bar")
@@ -1064,6 +1106,7 @@ harmonize <- function(x) {
 #'
 #' 	@param taxon character vector with taxa
 #'  @param count integer vector with counts
+#'  @export
 #'
 #'  @return integer vector with abundance per taxon.
 abundance <- 
@@ -1092,12 +1135,15 @@ function(taxon, count) {
 
 #'  Species Richness 
 #'
-#'  Compute species richness
+#'  Species richness (\eqn{S}{S}) is defined as the number of taxa 
+#'  (lowest identification level possible) per sampling unit 
+#'  (data pool or box core sample).
 #'
 #' 	@param taxon character vector with taxa
 #'  @param count integer vector with counts
+#'  @export
 #'
-#'  @return integer vector with abundance per taxon.
+#'  @return species richness (integer vector of length 1)
 speciesRichness <- 
 function(taxon, count) {
 
@@ -1109,6 +1155,41 @@ function(taxon, count) {
 }
 
 
+#'  Margalef Index of Diversity
+#'
+#'  Margalef Index of Diversity is given by
+#'  \deqn{D = \frac{S-1}{\ln(N)}}{D = (S-1)/ln(N)}
+#'  
+#'  For \eqn{N=1}{N=1}, the index is set to 0.
+#'
+#'  @param taxon character vector with taxa
+#'  @param count integer vector with counts
+#'  @export
+#'
+#'  @return Margalef diversity index (numeric vector of length 1)
+margalef <- 
+function(taxon, count) {
+
+    # species richness
+    S <- speciesRichness(taxon = taxon, count = count)
+
+    # abundance (delegate argument checking and removal of azoic samples)
+    n <- abundance(taxon = taxon, count = count)
+    
+    # total abundance (azoic samples are excluded)
+    N <- sum(n)
+    
+    # Margalef's index of diversity (azoic samples are excluded)
+    if (N == 1L) {
+        D <- 0 
+    } else {
+        D <-(S - 1) / log(N)
+    }
+    
+    # return D
+    D
+}
+
 
 #'  Shannon's Entropy 
 #'
@@ -1116,6 +1197,7 @@ function(taxon, count) {
 #'
 #'  @param taxon character vector with taxa
 #'  @param count integer vector with counts
+#'  @export
 #'
 #'  @return Shannon's entropy
 #'  
@@ -1145,9 +1227,17 @@ BEQI2dir <- function(path = NULL) {
 
     # interactive selection
     if (is.null(path)) {
-        path <- tk_choose.dir(
-            caption = "Select directory to store BEQI-2 files"
-        )
+        if (capabilities("tcltk")) {
+            path <- tk_choose.dir(
+                caption = "Select directory to store BEQI-2 files"
+            )
+        } else {
+            stop(
+                "The 'tcltk'-package is not supported on this machine.\n",
+                "Please provide a valid path as function argument\n",
+                call. = FALSE
+            )
+        }
     }
     
     # check path
@@ -1170,9 +1260,6 @@ BEQI2dir <- function(path = NULL) {
         to = path,
         recursive = TRUE
     )
-    
-    # create output directory
-    dir.create(path =  file.path(path, "OUTPUT-FILES"))
 
     # show message
     message(
@@ -1239,7 +1326,7 @@ function(id, taxon, count) {
             isGenusLevel <- is.na(x$speciesPart)
             isSpeciesLevel <- !isGenusLevel
             if (any(isGenusLevel) & any(isSpeciesLevel)) {
-    
+
                 # extract counts of species
                 n <- x$count[isSpeciesLevel]
                 

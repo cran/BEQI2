@@ -191,7 +191,7 @@ On MS-Windows, \R\ ships with a graphical user interface (GUI). It can be starte
 
 \section{Install the \pkg{BEQI2}-package}
 
-In the menu of the \R-console, select submenu \code{Install package(s)\dots} from main menu \code{Packages}. Select a download location (CRAN mirror, Figure~\ref{fig:install_package}, left), and select the BEQI2-package (Figure~\ref{fig:install_package}, right). \R\ will automatically install the BEQI2-package and all packages it depends on. 
+In the menu of the \R-console, select submenu \code{Install package(s)\dots} from main menu \code{Packages}. Select a download location (CRAN mirror, Figure~\ref{fig:install_package}, left), and select the \pkg{BEQI2}-package (Figure~\ref{fig:install_package}, right). \R\ will automatically install the \pkg{BEQI2}-package and all packages it depends on. 
 
 Note: Installation of the \pkg{BEQI2}-package has to be done only once. 
 
@@ -232,7 +232,12 @@ BEQI2dir()
 @
 A directory selection dialogue will pop up and will ask the user to select an existing directory. 
 
-NOTE: This directory should be empty to avoid mixing-up and losing analysis results.
+Note: In the rare situation that your system doesn't support the \pkg{tcltk} graphical user interface tool kit, you should provide an existing directory name as function argument, for instance:
+<<eval=FALSE, echo=TRUE>>=
+BEQI2dir("myBEQI2_analysis_dir") 
+@
+
+Note: This directory should be empty to avoid mixing-up and losing analysis results.
 
 
 \section{Start the \pkg{BEQI2}-tool}
@@ -247,13 +252,13 @@ or
 beqi2() 
 @
 
-in the \R-console. A file-dialogue will appear, and the user needs to select the JSON-file containing all BEQI2-settings.
+in the \R-console. A file-dialogue will appear, and the user needs to select the JSON-file containing all \pkg{BEQI2}-settings.
 
 \section{View your results}
-The BEQI2-function produces the following results in the output directory:
+The \pkg{BEQI2}-function produces the following results in the output directory:
 \begin{enumerate}
-    \item a report (HTML-format) with all analysis results. This report will be launched automatically in your default internet browser after a BEQI2-analysis;
-    \item analysis results written in CSV-format. This format can be directly used for further analysis, \textit{e.g.} in MS-Excel or LibreOffice;
+    \item a report (HTML-format) with all analysis results. This report will be launched automatically in your default internet browser after a \pkg{BEQI2}-analysis;
+    \item analysis results written in CSV-format. This format can be directly used for further analysis, \textit{e.g.} in MS-Excel or LibreOffice Calc;
     \item a log-file containing diagnostic messages, warning messages, and error messages.
 \end{enumerate}
 

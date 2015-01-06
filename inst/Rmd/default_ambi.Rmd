@@ -1,1 +1,1 @@
-No AMBI-files has been specified. Therefore, the AMBI-values provided by Dr. Borja (see acknowledgements) will be used.
+No AMBI-file has been specified. Therefore, the standard AMBI-list (www.azti.es, version October 2013, by courtesy of Angel Borja) will be used.

@@ -6,8 +6,9 @@
 #'	@import xtable
 #'  @import plyr
 #'	@import reshape2
-#'  @import knitr
 #'  @import markdown
+#'  @import knitr
+#'  @import tcltk
 #'  @name BEQI2-pkg
 #'  @aliases BEQI
 #'  @aliases beqi

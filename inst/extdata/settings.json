@@ -1,79 +1,19 @@
 {
-    // ===== header information ================================================
-
-    // title of the analysis
-    "title": "BEQI-2 analysis Oosterschelde",
-
-    // person who performs this analysis
-    "user": "your name",
-
-    // date this file has been modified
-    "date": "2014-12-11",
-
-
-
-    // ===== input files =======================================================
-    
-    // working directory (optional)
-    // If commented out (i.e., adding // as prefix), the directory containing
-    // this JSON-file will be used as working directory.
-    // "working directory": "d:/projects/BEQI2",
- 
-    // path of input file containing taxa counts (BEQI-format)
-    "BEQI-file": "INPUT-FILES/20140115-BEQI2-Data-Oosterschelde.csv",
-
-    // path containing the Taxa Watermanagement (the) Netherlands list
-    "TWN-file": "REF-FILES/TAXA-TWN-2013-11-27.csv",
-
-    // Infaunal trophic index (Gittenberger et al., 2013). 
-    // optional:  can be disabled by adding // before the following line:
-    "ITI-file": "REF-FILES/ITI.csv",
-
-    // Ecotopes reference file
-    "ER-file": "REF-FILES/BEQI2-Ecotopes-2014-04-11.csv",
-
-    // Optional species sensitivity (AMBI) file provided by the user.
-    // If not specified, a recent version (fall 2013) of the species 
-    // sensitivities kindly provided by Dr. Angel Borja (AZTI- Tecnalia
-    // Marine Research Division, http://ambi.azti.es) will be used.
-    // In case a species sensitivity file is specified, 
-    // it will update the data provided by Borja.
-    // Borja's sensitivities will be used as fallback for species that are 
-    // missing in the user-supplied sensitivity file.
-    "AMBI-file": "REF-FILES/AMBI-NL+.csv",
-
-
-    // ===== analysis settings =================================================
-
-    // range of months to be analysed (e.g., 1: January, 12: December)
-    "months": [8, 12],
-
-    // should pooling be performed (true, false)
-    "pool": true,
-    
-    // seed to initialize the pseudo random number generator (integer)
-    "random seed": 314,
- 
-    // range of target area ([minimum, maximum])
-    "target area": [0.09, 0.11],
-
-    // Genus to species conversion per sample (true, false)
-    "Genus to species conversion": true,
-
-
-
-    // ===== output files ======================================================
-    // In the section below all OUTPUT files are given 
-
-    // path of HTML-document that should contain all results
-    "report-file": "OUTPUT-FILES/Oosterschelde.html",
-
-    // path of log-file for printing errors, warnings and messages	
-    "log-file": "OUTPUT-FILES/Oosterschelde.log",
-
-    // pooling results
-    "pool-file": "OUTPUT-FILES/pooling.csv",
-    
-    // output file
-    "output-file": "OUTPUT-FILES/Oosterschelde.csv"
+    "title": "BEQI-2 analysis 'Oosterschelde'",
+    "user": "Jan de Ruiter",
+    "date": "2014-12-24",
+    "files": {
+        "BEQI2": "INPUT-FILES/20140115-BEQI2-Data-Oosterschelde.csv",
+        "SpeciesNames": "REF-FILES/TAXA-TWN-2013-11-27.csv",
+        "Ecotopes": "REF-FILES/BEQI2-Ecotopes.csv",
+        "AMBI": "REF-FILES/AMBI-NL+.csv"
+    },
+    "months": [1,12],
+    "pooling": {
+        "enabled": true,
+        "randomSeed": 314,
+        "targetArea": [0.09, 0.11]
+    },
+    "genusToSpeciesConversion": true
 }
+

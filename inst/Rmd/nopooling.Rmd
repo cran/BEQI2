@@ -1,5 +1,3 @@
-### No data pooling
-
 Data will not be pooled and taken as is.
 
 ```{r}

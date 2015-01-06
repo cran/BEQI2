@@ -28,6 +28,9 @@ rversion <- sub(
 #  BEQI2dir()
 
 ## ----eval=FALSE, echo=TRUE-----------------------------------------------
+#  BEQI2dir("myBEQI2_analysis_dir")
+
+## ----eval=FALSE, echo=TRUE-----------------------------------------------
 #  BEQI2()
 
 ## ----eval=FALSE, echo=TRUE-----------------------------------------------
